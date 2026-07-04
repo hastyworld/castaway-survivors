@@ -52,22 +52,36 @@ npm run dev      # 개발 서버 실행
 
 ---
 
-## 3. 구글 플레이 출시 준비 (기획안 10단계, 나중에)
+## 3. 휴대폰에 설치하기 (안드로이드 APK)
 
-웹으로 완성한 뒤 **Capacitor**로 안드로이드 앱으로 포장합니다.
+**Capacitor 6**로 웹 게임을 안드로이드 앱으로 포장합니다. (JDK 17 + Android SDK 필요 — 이 PC엔 이미 설치됨)
 
+### APK 만들기 (한 방에)
 ```powershell
-npm run build                     # dist/ 에 웹 결과물 생성
-npm install @capacitor/core @capacitor/cli @capacitor/android
-npx cap init                      # capacitor.config.ts 이미 있음
-npx cap add android
-npx cap sync
-npx cap open android              # Android Studio에서 열려 → APK/AAB 빌드
+./build-apk.ps1
+```
+- 끝나면 **바탕화면에 `표류서바이버.apk`** 가 생깁니다.
+- 게임 코드를 고친 뒤 다시 이걸 실행하면 최신 APK가 새로 만들어집니다.
+
+### 휴대폰에 설치
+1. `표류서바이버.apk` 를 휴대폰으로 옮깁니다.
+   - 가장 쉬운 방법: 바탕화면이 OneDrive라 **휴대폰 OneDrive 앱**에서 바로 내려받기, 또는 카카오톡 '나에게 보내기' / USB 케이블로 복사.
+2. 휴대폰에서 그 APK 파일을 **탭** → "이 출처의 앱 설치 허용" 이 뜨면 허용.
+3. Play Protect 경고(개발자 미확인)가 나오면 **"무시하고 설치"**. (내가 만든 앱이라 안전)
+4. 설치 완료 → 앱 서랍에 **"표류 서바이버"** 아이콘.
+
+### USB로 바로 설치 (개발자 옵션 켠 경우)
+휴대폰 USB 디버깅을 켜고 케이블로 연결한 뒤:
+```powershell
+adb install -r "$env:USERPROFILE\OneDrive\바탕 화면\표류서바이버.apk"
 ```
 
-이후 필요한 것:
+> ⚠️ 이건 **디버그(테스트) APK** 입니다. 내 폰/지인 테스트용으로 충분하고, 실제 구글 플레이 출시 때는 별도의 **서명된 릴리스 빌드(AAB)** 와 개발자 계정($25)이 필요합니다.
+
+### 구글 플레이 정식 출시 때 추가로 필요한 것
 - 구글 플레이 개발자 계정($25, 1회)
 - 앱 아이콘 / 스플래시 / 스토어 스크린샷
+- 릴리스 서명 키(keystore) 로 서명한 **AAB** 빌드
 - 보상형 광고는 AdMob 플러그인으로 **맨 마지막에** 연동 (기획안 7·8번: 필수 광고 0개)
 
 ---
