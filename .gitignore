@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.DS_Store
+*.local
+.vscode/
+# Capacitor (모바일 포장 시 생성)
+android/
+ios/

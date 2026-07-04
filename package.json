@@ -1,0 +1,20 @@
+{
+  "name": "castaway-survivors",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "표류 서바이버 (Castaway Survivors) — 무인도 탈출 뱀서라이크",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vite": "^6.0.7"
+  }
+}

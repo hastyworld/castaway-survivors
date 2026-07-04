@@ -1,0 +1,46 @@
+// ============================================================
+// main.ts — Phaser 게임 부팅 (진입점)
+// ============================================================
+import Phaser from 'phaser';
+import { GAME_WIDTH, GAME_HEIGHT, COLORS } from './config';
+import BootScene from './scenes/BootScene';
+import TitleScene from './scenes/TitleScene';
+import ShopScene from './scenes/ShopScene';
+import MapScene from './scenes/MapScene';
+import GameScene from './scenes/GameScene';
+import ResultScene from './scenes/ResultScene';
+
+const config: Phaser.Types.Core.GameConfig = {
+  type: Phaser.AUTO,
+  parent: 'game',
+  width: GAME_WIDTH,
+  height: GAME_HEIGHT,
+  backgroundColor: COLORS.oceanDark,
+  scale: {
+    mode: Phaser.Scale.FIT, // 화면에 맞춰 비율 유지하며 확대/축소
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
+  physics: {
+    default: 'arcade',
+    arcade: { debug: false },
+  },
+  render: { antialias: true, roundPixels: false },
+  scene: [BootScene, TitleScene, ShopScene, MapScene, GameScene, ResultScene],
+};
+
+// HMR(코드 저장 시 자동 새로고침) 대비: 기존 게임 인스턴스가 있으면 정리
+const w = window as unknown as { __game?: Phaser.Game; __errs?: string[] };
+if (w.__game) {
+  w.__game.destroy(true);
+}
+
+const game = new Phaser.Game(config);
+w.__game = game; // 디버깅용: 콘솔에서 window.__game
+
+w.__errs = w.__errs ?? [];
+window.addEventListener('error', (e) => w.__errs!.push(String(e.message)));
+window.addEventListener('unhandledrejection', (e) => w.__errs!.push('promise: ' + String(e.reason)));
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => game.destroy(true));
+}
