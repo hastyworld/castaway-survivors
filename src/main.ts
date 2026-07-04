@@ -44,3 +44,10 @@ window.addEventListener('unhandledrejection', (e) => w.__errs!.push('promise: ' 
 if (import.meta.hot) {
   import.meta.hot.dispose(() => game.destroy(true));
 }
+
+// 서비스워커 등록 (배포 빌드에서만) — 오프라인 실행 + 자동 업데이트
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}

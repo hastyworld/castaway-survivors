@@ -1,0 +1,48 @@
+name: Deploy to GitHub Pages
+
+# master(또는 main) 에 push 될 때마다 자동으로 빌드해서 GitHub Pages 에 배포.
+# 즉, 클로드코드로 코드를 고치고 push 하면 → 폰에서 다음에 열 때 자동 최신 반영.
+on:
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포는 한 번에 하나씩
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 의존성 설치
+        run: npm ci
+      - name: 웹 빌드
+        run: npm run build
+      - name: Pages 설정
+        uses: actions/configure-pages@v5
+      - name: 결과물 업로드
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 배포
+        id: deployment
+        uses: actions/deploy-pages@v4
