@@ -6,6 +6,7 @@ import { CSS, FONT, GAME_WIDTH, GAME_HEIGHT, COLORS } from '../config';
 import { drawGradient } from '../ui/Background';
 import { makeButton } from '../ui/Button';
 import { load, currentVehicle } from '../save';
+import { Sfx } from '../systems/Sfx';
 
 export default class TitleScene extends Phaser.Scene {
   constructor() {
@@ -61,11 +62,26 @@ export default class TitleScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 30, 'v0.1 초안 · 이동만 조작, 공격은 자동', {
+      .text(GAME_WIDTH / 2, GAME_HEIGHT - 30, 'v0.2 · 이동만 조작, 공격은 자동 · 화면을 누르면 소리 켜짐', {
         fontFamily: FONT,
         fontSize: '12px',
         color: CSS.textDim,
       })
       .setOrigin(0.5);
+
+    // 음소거 토글 (우상단)
+    const mi = this.add
+      .text(GAME_WIDTH - 24, 28, Sfx.muted ? '♪ 꺼짐' : '♪ 켜짐', {
+        fontFamily: FONT,
+        fontSize: '14px',
+        color: Sfx.muted ? '#6f8496' : CSS.accent,
+        fontStyle: 'bold',
+      })
+      .setOrigin(1, 0.5)
+      .setInteractive({ useHandCursor: true });
+    mi.on('pointerup', () => {
+      const m = Sfx.toggleMute();
+      mi.setText(m ? '♪ 꺼짐' : '♪ 켜짐').setColor(m ? '#6f8496' : CSS.accent);
+    });
   }
 }

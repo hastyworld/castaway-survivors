@@ -3,6 +3,7 @@
 // ============================================================
 import Phaser from 'phaser';
 import { CSS, FONT, COLORS } from '../config';
+import { Sfx } from '../systems/Sfx';
 
 export interface ButtonOpts {
   width?: number;
@@ -45,6 +46,7 @@ export function makeButton(
     bg.on('pointerdown', () => c.setScale(0.97));
     bg.on('pointerup', () => {
       c.setScale(1);
+      Sfx.click();
       onClick();
     });
   }

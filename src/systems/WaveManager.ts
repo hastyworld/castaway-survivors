@@ -7,6 +7,7 @@ import { ENEMIES } from '../content';
 import { IslandDef } from '../config';
 import type GameScene from '../scenes/GameScene';
 import Enemy from '../entities/Enemy';
+import { Sfx } from './Sfx';
 
 const CONCURRENT_CAP = 80; // 동시에 살아있는 잡몹 상한(과부하 방지)
 
@@ -62,6 +63,7 @@ export default class WaveManager {
         this.waveIndex += 1;
         this.spawnedInWave = 0;
         this.spawnTimer = 0;
+        Sfx.waveClear();
         this.scene.announce(this.label());
       } else {
         this.startBoss();

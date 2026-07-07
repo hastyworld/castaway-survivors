@@ -23,6 +23,8 @@ import WaveManager from '../systems/WaveManager';
 import Joystick from '../systems/Joystick';
 import Hud from '../ui/Hud';
 import LevelUp, { UpgradeOption } from '../ui/LevelUp';
+import Fx from '../systems/Fx';
+import { Sfx } from '../systems/Sfx';
 import { ISLANDS, WEAPONS, PASSIVES } from '../content';
 import { addGold, markCleared } from '../save';
 
@@ -46,6 +48,7 @@ export default class GameScene extends Phaser.Scene {
   private hud!: Hud;
   private levelUp!: LevelUp;
   private joystick!: Joystick;
+  private fx!: Fx;
   private keys!: {
     up: Phaser.Input.Keyboard.Key;
     down: Phaser.Input.Keyboard.Key;
@@ -101,6 +104,22 @@ export default class GameScene extends Phaser.Scene {
     drawGradient(this, this.island.bgTop, this.island.bgBottom);
     this.add.ellipse(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 60, GAME_WIDTH * 1.3, GAME_HEIGHT * 0.9, 0xffffff, 0.04).setDepth(-90);
 
+    // 배경 분위기: 천천히 떠오르는 물방울
+    this.add
+      .particles(0, 0, 'spark', {
+        x: { min: 0, max: GAME_WIDTH },
+        y: GAME_HEIGHT + 10,
+        lifespan: 6000,
+        speedY: { min: -40, max: -18 },
+        speedX: { min: -8, max: 8 },
+        scale: { start: 0.25, end: 0.5 },
+        alpha: { start: 0.18, end: 0 },
+        frequency: 420,
+        tint: 0x8fd3ff,
+        blendMode: 'ADD',
+      })
+      .setDepth(-80);
+
     // 플레이 영역(HUD 아래) 밖으로 못 나가게
     this.physics.world.setBounds(6, HUD_HEIGHT, GAME_WIDTH - 12, GAME_HEIGHT - HUD_HEIGHT - 6);
 
@@ -120,6 +139,8 @@ export default class GameScene extends Phaser.Scene {
     this.hud = new Hud(this);
     this.levelUp = new LevelUp(this);
     this.joystick = new Joystick(this);
+    this.fx = new Fx(this);
+    Sfx.resume(); // 배경음/효과음 준비
 
     // 키보드
     const kb = this.input.keyboard!;
@@ -140,6 +161,18 @@ export default class GameScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.gems, this.onCollectGem, undefined, this);
 
     this.announce(this.waves.label());
+
+    // 음소거 버튼 (우하단)
+    const mb = this.add.circle(GAME_WIDTH - 26, GAME_HEIGHT - 26, 18, 0x000000, 0.35).setScrollFactor(0).setDepth(210).setInteractive({ useHandCursor: true });
+    const mi = this.add
+      .text(GAME_WIDTH - 26, GAME_HEIGHT - 27, '♪', { fontFamily: FONT, fontSize: '18px', color: Sfx.muted ? '#6f8496' : CSS.accent, fontStyle: 'bold' })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(211);
+    mb.on('pointerup', () => {
+      const m = Sfx.toggleMute();
+      mi.setColor(m ? '#6f8496' : CSS.accent);
+    });
   }
 
   // ---------------- 매 프레임 ----------------
@@ -233,6 +266,7 @@ export default class GameScene extends Phaser.Scene {
     this.enemies.add(e);
     if (isBoss) {
       this.cameras.main.shake(400, 0.008);
+      Sfx.boss();
       e.setScale(0).setAlpha(0);
       this.tweens.add({ targets: e, scale: def.radius / 32, alpha: 1, duration: 500, ease: 'Back.out' });
     }
@@ -254,9 +288,13 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  damageEnemy(enemy: Enemy, amount: number): void {
+  damageEnemy(enemy: Enemy, amount: number, showNumber = true): void {
     if (!enemy.active) return;
     enemy.takeDamage(amount);
+    Sfx.hit();
+    if (showNumber) {
+      this.fx.number(enemy.x, enemy.y - enemy.displayHeight / 2, amount, enemy.isBoss ? CSS.accent : '#ffffff', enemy.isBoss);
+    }
     if (enemy.hp <= 0) this.killEnemy(enemy);
   }
 
@@ -268,9 +306,9 @@ export default class GameScene extends Phaser.Scene {
     // 경험치 젬 드롭
     this.dropGem(enemy.x, enemy.y, enemy.xpValue);
 
-    // 사망 연출(퍼프)
-    const puff = this.add.image(enemy.x, enemy.y, 'circle').setTint(0xffffff).setDisplaySize(enemy.displayWidth, enemy.displayHeight).setDepth(7).setAlpha(0.7);
-    this.tweens.add({ targets: puff, scale: puff.scale * 1.6, alpha: 0, duration: 200, onComplete: () => puff.destroy() });
+    // 사망 연출: 파티클 버스트 + 효과음
+    this.fx.burst(enemy.x, enemy.y, enemy.baseColor, enemy.isBoss ? 24 : 8);
+    Sfx.kill();
 
     if (enemy.isBoss) this.cameras.main.shake(300, 0.01);
 
@@ -286,8 +324,19 @@ export default class GameScene extends Phaser.Scene {
   }
 
   // ---------------- 투사체 ----------------
-  spawnProjectile(x: number, y: number, angle: number, speed: number, damage: number, pierce: number, tint: number, radius: number): void {
-    const p = this.physics.add.image(x, y, 'circle').setTint(tint).setDepth(8);
+  spawnProjectile(
+    x: number,
+    y: number,
+    angle: number,
+    speed: number,
+    damage: number,
+    pierce: number,
+    tint: number,
+    radius: number,
+    texture = 'circle',
+    spin = 0
+  ): void {
+    const p = this.physics.add.image(x, y, texture).setTint(tint).setDepth(8);
     p.setDisplaySize(radius * 2, radius * 2);
     // ⚠ 그룹에 먼저 add → 그 다음 속도 설정.
     // (Arcade physics Group.add 가 body 기본값을 적용하며 속도를 0으로 초기화하기 때문)
@@ -295,10 +344,12 @@ export default class GameScene extends Phaser.Scene {
     const body = p.body as Phaser.Physics.Arcade.Body;
     body.setCircle(32, 0, 0);
     body.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
+    if (spin) body.setAngularVelocity(spin);
     p.setData('damage', damage);
     p.setData('pierce', pierce);
     p.setData('hits', new Set<Enemy>());
     p.setData('dieAt', this.time.now + 2600);
+    Sfx.shoot();
   }
 
   private onProjectileHit: ArcadePhysicsCallback = (projObj, enemyObj) => {
@@ -352,6 +403,8 @@ export default class GameScene extends Phaser.Scene {
     const gem = gemObj as Phaser.Physics.Arcade.Image;
     if (!gem.active) return;
     this.gainXp(gem.getData('xp') as number);
+    this.fx.spark(gem.x, gem.y);
+    Sfx.gem();
     gem.destroy();
   };
 
@@ -365,7 +418,9 @@ export default class GameScene extends Phaser.Scene {
     if (!enemy.active) return;
     const now = this.time.now;
     if (this.player.takeDamage(enemy.contactDamage, now)) {
-      this.cameras.main.shake(120, 0.006);
+      this.cameras.main.shake(140, 0.008);
+      this.fx.hurtFlash();
+      Sfx.hurt();
       this.player.setTint(COLORS.danger);
       this.time.delayedCall(120, () => this.player.setTint(COLORS.player));
       if (this.player.isDead()) this.defeat();
@@ -382,6 +437,9 @@ export default class GameScene extends Phaser.Scene {
     this.xp -= this.xpNeed;
     this.level += 1;
     this.xpNeed = this.xpForLevel(this.level);
+
+    this.fx.levelRing(this.player.x, this.player.y);
+    Sfx.levelup();
 
     this.paused = true;
     this.physics.pause();
@@ -485,6 +543,7 @@ export default class GameScene extends Phaser.Scene {
   onVictory(): void {
     if (this.state === 'over') return;
     this.state = 'over';
+    Sfx.victory();
     const earned = this.island.reward + this.runGold;
     markCleared(this.island.id);
     addGold(earned);
@@ -494,6 +553,7 @@ export default class GameScene extends Phaser.Scene {
   private defeat(): void {
     if (this.state === 'over') return;
     this.state = 'over';
+    Sfx.defeat();
     addGold(this.runGold);
     this.finish(false, this.runGold);
   }

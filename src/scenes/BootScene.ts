@@ -40,6 +40,35 @@ export default class BootScene extends Phaser.Scene {
     g.fillStyle(0xffffff, 1);
     g.fillCircle(32, 32, 30);
     g.generateTexture('joyThumb', 64, 64);
+    g.clear();
+
+    // 파티클용 작은 스파크 (부드러운 점)
+    g.fillStyle(0xffffff, 0.35);
+    g.fillCircle(8, 8, 8);
+    g.fillStyle(0xffffff, 1);
+    g.fillCircle(8, 8, 4);
+    g.generateTexture('spark', 16, 16);
+    g.clear();
+
+    // 불가사리 표창용 5각 별 (64px, setCircle(32) 호환)
+    g.fillStyle(0xffffff, 1);
+    const cx = 32;
+    const cy = 32;
+    const outer = 30;
+    const inner = 14;
+    const pts = 5;
+    g.beginPath();
+    for (let i = 0; i < pts * 2; i++) {
+      const r = i % 2 === 0 ? outer : inner;
+      const a = (Math.PI / pts) * i - Math.PI / 2;
+      const px = cx + Math.cos(a) * r;
+      const py = cy + Math.sin(a) * r;
+      if (i === 0) g.moveTo(px, py);
+      else g.lineTo(px, py);
+    }
+    g.closePath();
+    g.fillPath();
+    g.generateTexture('star', 64, 64);
 
     g.destroy();
 

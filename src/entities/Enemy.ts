@@ -14,6 +14,8 @@ export default class Enemy extends Phaser.Physics.Arcade.Image {
   goldValue = 0;
   isBoss = false;
   nextContactAt = 0; // 접촉 데미지 쿨다운
+  baseColor = 0xffffff; // 원래 색 (피격 플래시 후 복원)
+  private flashUntil = 0;
   private hpBar?: Phaser.GameObjects.Rectangle;
   private hpBarBg?: Phaser.GameObjects.Rectangle;
 
@@ -34,6 +36,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Image {
     this.goldValue = def.gold ?? 0;
 
     this.setPosition(x, y);
+    this.baseColor = def.color;
     this.setTint(def.color);
     this.setDisplaySize(def.radius * 2, def.radius * 2);
     this.setActive(true).setVisible(true);
@@ -51,8 +54,9 @@ export default class Enemy extends Phaser.Physics.Arcade.Image {
 
   takeDamage(amount: number): void {
     this.hp -= amount;
-    // 피격 깜빡임
-    this.scene.tweens.add({ targets: this, alpha: 0.5, duration: 40, yoyo: true });
+    // 흰색 피격 플래시 (track()에서 복원)
+    this.setTintFill(0xffffff);
+    this.flashUntil = this.scene.time.now + 55;
     if (this.isBoss && this.hpBar) {
       const ratio = Phaser.Math.Clamp(this.hp / this.maxHp, 0, 1);
       this.hpBar.width = 90 * ratio;
@@ -63,6 +67,11 @@ export default class Enemy extends Phaser.Physics.Arcade.Image {
   track(px: number, py: number): void {
     const body = this.body as Phaser.Physics.Arcade.Body;
     if (!body) return;
+    // 피격 플래시 복원
+    if (this.flashUntil && this.scene.time.now > this.flashUntil) {
+      this.setTint(this.baseColor);
+      this.flashUntil = 0;
+    }
     const angle = Math.atan2(py - this.y, px - this.x);
     body.setVelocity(Math.cos(angle) * this.speed, Math.sin(angle) * this.speed);
     if (this.isBoss && this.hpBar && this.hpBarBg) {

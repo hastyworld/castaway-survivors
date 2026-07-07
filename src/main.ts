@@ -45,8 +45,11 @@ if (import.meta.hot) {
   import.meta.hot.dispose(() => game.destroy(true));
 }
 
-// 서비스워커 등록 (배포 빌드에서만) — 오프라인 실행 + 자동 업데이트
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+// 서비스워커 등록 (웹 배포 빌드에서만) — 오프라인 실행 + 자동 업데이트
+// ⚠ Capacitor(안드로이드 앱) 안에서는 등록 안 함: 앱은 에셋을 자체 번들하므로
+//    SW 캐시가 앱 업데이트 후 옛 코드를 물고 있을 수 있어 오히려 문제.
+const isNative = !!(window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
+if (import.meta.env.PROD && !isNative && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   });

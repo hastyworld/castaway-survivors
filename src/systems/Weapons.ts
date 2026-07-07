@@ -125,7 +125,7 @@ export default class WeaponSystem {
     const shots = level >= 4 ? 2 : 1; // 4레벨부터 반대방향으로 하나 더
     for (let i = 0; i < shots; i++) {
       const a = baseAngle + (i === 1 ? Math.PI : 0);
-      this.scene.spawnProjectile(p.x, p.y, a, 380, dmg, pierce, COLORS.starfish, 12);
+      this.scene.spawnProjectile(p.x, p.y, a, 380, dmg, pierce, COLORS.starfish, 13, 'star', 420);
     }
   }
 
@@ -134,7 +134,7 @@ export default class WeaponSystem {
     this.scene.getActiveEnemies().forEach((e: Enemy) => {
       const dx = e.x - x;
       const dy = e.y - y;
-      if (dx * dx + dy * dy <= r2) this.scene.damageEnemy(e, dmg);
+      if (dx * dx + dy * dy <= r2) this.scene.damageEnemy(e, dmg, false);
     });
   }
 
