@@ -66,7 +66,8 @@ export type PassiveId = 'maxhp' | 'power' | 'speed' | 'haste' | 'magnet' | 'rege
 export interface EnemyDef {
   id: string;
   name: string;
-  color: number;
+  color: number; // 파티클/보조 색
+  texture: string; // 스프라이트 텍스처 키 (art.ts)
   hp: number;
   speed: number;
   damage: number;

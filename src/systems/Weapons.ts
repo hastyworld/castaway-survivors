@@ -110,7 +110,7 @@ export default class WeaponSystem {
       const t = targets[i] ?? targets[0];
       angle = Math.atan2(t.y - p.y, t.x - p.x);
       if (i > 0 && !targets[i]) angle += Phaser.Math.FloatBetween(-0.4, 0.4); // 남는 발은 부채꼴
-      this.scene.spawnProjectile(p.x, p.y, angle, 480, dmg, 0, COLORS.coconut, 9);
+      this.scene.spawnProjectile(p.x, p.y, angle, 480, dmg, 0, 0xffffff, 11, 'coconut', 150);
     }
   }
 
@@ -125,7 +125,7 @@ export default class WeaponSystem {
     const shots = level >= 4 ? 2 : 1; // 4레벨부터 반대방향으로 하나 더
     for (let i = 0; i < shots; i++) {
       const a = baseAngle + (i === 1 ? Math.PI : 0);
-      this.scene.spawnProjectile(p.x, p.y, a, 380, dmg, pierce, COLORS.starfish, 13, 'star', 420);
+      this.scene.spawnProjectile(p.x, p.y, a, 380, dmg, pierce, 0xffffff, 14, 'starfish_p', 420);
     }
   }
 

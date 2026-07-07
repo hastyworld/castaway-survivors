@@ -37,7 +37,8 @@ export default class Enemy extends Phaser.Physics.Arcade.Image {
 
     this.setPosition(x, y);
     this.baseColor = def.color;
-    this.setTint(def.color);
+    this.setTexture(def.texture);
+    this.clearTint();
     this.setDisplaySize(def.radius * 2, def.radius * 2);
     this.setActive(true).setVisible(true);
     this.nextContactAt = 0;
@@ -67,9 +68,9 @@ export default class Enemy extends Phaser.Physics.Arcade.Image {
   track(px: number, py: number): void {
     const body = this.body as Phaser.Physics.Arcade.Body;
     if (!body) return;
-    // 피격 플래시 복원
+    // 피격 플래시 복원 (텍스처 색으로)
     if (this.flashUntil && this.scene.time.now > this.flashUntil) {
-      this.setTint(this.baseColor);
+      this.clearTint();
       this.flashUntil = 0;
     }
     const angle = Math.atan2(py - this.y, px - this.x);

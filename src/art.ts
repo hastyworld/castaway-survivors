@@ -1,0 +1,357 @@
+// ============================================================
+// art.ts — 코드로 그리는 캐릭터/적/소품 텍스처 (에셋 파일 없음)
+// 모든 텍스처는 64x64 기준(원형 히트박스 setCircle(32)와 호환).
+// BootScene 에서 generateArt(scene) 한 번 호출.
+// ============================================================
+import Phaser from 'phaser';
+
+type G = Phaser.GameObjects.Graphics;
+
+// 자주 쓰는 색
+const SKIN = 0xf2c79a;
+const SKIN_D = 0xd9a878;
+const STRAW = 0xe8c877;
+const STRAW_D = 0xc9a24e;
+const WHITE = 0xffffff;
+const DARK = 0x22252b;
+
+// 귀여운 눈 (흰자 + 눈동자)
+function eyes(g: G, cx: number, gap: number, y: number, r: number, pr: number, angry = false): void {
+  g.fillStyle(WHITE, 1);
+  g.fillCircle(cx - gap, y, r);
+  g.fillCircle(cx + gap, y, r);
+  g.fillStyle(DARK, 1);
+  g.fillCircle(cx - gap, y, pr);
+  g.fillCircle(cx + gap, y, pr);
+  if (angry) {
+    // 성난 눈썹
+    g.lineStyle(2.5, DARK, 1);
+    g.lineBetween(cx - gap - r, y - r - 1, cx - gap + r * 0.3, y - 1);
+    g.lineBetween(cx + gap + r, y - r - 1, cx + gap - r * 0.3, y - 1);
+  }
+}
+
+function crown(g: G, cx: number, y: number, w: number): void {
+  g.fillStyle(0xffd45e, 1);
+  const h = 10;
+  g.fillRect(cx - w / 2, y, w, 4);
+  g.fillTriangle(cx - w / 2, y, cx - w / 2 + 6, y - h, cx - w / 2 + 12, y);
+  g.fillTriangle(cx - 6, y, cx, y - h - 2, cx + 6, y);
+  g.fillTriangle(cx + w / 2, y, cx + w / 2 - 6, y - h, cx + w / 2 - 12, y);
+}
+
+export function generateArt(scene: Phaser.Scene): void {
+  const g = scene.make.graphics({ x: 0, y: 0 });
+  const tex = (key: string, size = 64) => {
+    g.generateTexture(key, size, size);
+    g.clear();
+  };
+
+  // ---------- 기본 도형 (오라/링/파티클/조이스틱) ----------
+  g.fillStyle(WHITE, 1);
+  g.fillCircle(32, 32, 32);
+  tex('circle');
+
+  g.fillStyle(WHITE, 1);
+  g.beginPath();
+  g.moveTo(12, 0);
+  g.lineTo(24, 12);
+  g.lineTo(12, 24);
+  g.lineTo(0, 12);
+  g.closePath();
+  g.fillPath();
+  tex('gem', 24);
+
+  g.fillStyle(WHITE, 0.35);
+  g.fillCircle(8, 8, 8);
+  g.fillStyle(WHITE, 1);
+  g.fillCircle(8, 8, 4);
+  tex('spark', 16);
+
+  g.lineStyle(6, WHITE, 1);
+  g.strokeCircle(70, 70, 64);
+  tex('joyBase', 140);
+
+  g.fillStyle(WHITE, 1);
+  g.fillCircle(32, 32, 30);
+  tex('joyThumb');
+
+  // ---------- 주인공: 밀짚모자 표류 생존자 ----------
+  // 그림자
+  g.fillStyle(0x000000, 0.15);
+  g.fillEllipse(32, 56, 34, 10);
+  // 몸통(파란 셔츠)
+  g.fillStyle(0x6fb7e0, 1);
+  g.fillRoundedRect(20, 38, 24, 20, 9);
+  g.fillStyle(0x8fd3ff, 1);
+  g.fillRoundedRect(22, 40, 20, 12, 7);
+  // 팔
+  g.fillStyle(SKIN, 1);
+  g.fillCircle(19, 46, 4.5);
+  g.fillCircle(45, 46, 4.5);
+  // 머리
+  g.fillStyle(SKIN, 1);
+  g.fillCircle(32, 30, 12);
+  g.fillStyle(SKIN_D, 1);
+  g.fillEllipse(32, 40, 16, 6); // 턱 그늘
+  g.fillStyle(SKIN, 1);
+  g.fillCircle(32, 29, 11.5);
+  // 눈 + 볼
+  eyes(g, 32, 5, 30, 3, 1.6);
+  g.fillStyle(0xffb0a0, 0.5);
+  g.fillCircle(25, 34, 2.5);
+  g.fillCircle(39, 34, 2.5);
+  // 밀짚모자
+  g.fillStyle(STRAW_D, 1);
+  g.fillEllipse(32, 20, 42, 12); // 챙
+  g.fillStyle(STRAW, 1);
+  g.fillEllipse(32, 19, 40, 9);
+  g.fillStyle(STRAW_D, 1);
+  g.fillTriangle(20, 19, 44, 19, 32, 5); // 고깔
+  g.fillStyle(STRAW, 1);
+  g.fillTriangle(22, 18, 42, 18, 32, 7);
+  tex('player');
+
+  // ---------- 적: 모기떼 (작고 빠른 벌레) ----------
+  g.fillStyle(WHITE, 0.45);
+  g.fillEllipse(20, 24, 18, 12); // 날개
+  g.fillEllipse(44, 24, 18, 12);
+  g.fillStyle(0xb5453f, 1);
+  g.fillEllipse(32, 36, 20, 26); // 몸통
+  g.fillStyle(0x8f322e, 1);
+  g.fillCircle(32, 24, 8); // 머리
+  g.lineStyle(2, 0x8f322e, 1);
+  g.lineBetween(29, 18, 25, 9); // 더듬이
+  g.lineBetween(35, 18, 39, 9);
+  eyes(g, 32, 4, 24, 3, 1.5);
+  g.lineStyle(2.5, 0x5a1f1c, 1);
+  g.lineBetween(32, 44, 32, 52); // 침
+  tex('enemy_bug');
+
+  // ---------- 적: 집게게 ----------
+  g.fillStyle(0xe07b34, 1); // 집게
+  g.fillCircle(13, 38, 9);
+  g.fillCircle(51, 38, 9);
+  g.fillStyle(0xf59b52, 1);
+  g.fillTriangle(13, 30, 5, 34, 13, 40); // 집게 벌어짐
+  g.fillTriangle(51, 30, 59, 34, 51, 40);
+  g.fillStyle(0xf59b52, 1);
+  g.fillEllipse(32, 38, 34, 26); // 등딱지
+  g.fillStyle(0xe07b34, 1);
+  g.fillEllipse(32, 33, 30, 14);
+  // 다리
+  g.lineStyle(2.5, 0xe07b34, 1);
+  g.lineBetween(20, 46, 12, 54);
+  g.lineBetween(44, 46, 52, 54);
+  // 눈자루
+  g.lineStyle(3, 0xe07b34, 1);
+  g.lineBetween(26, 26, 26, 18);
+  g.lineBetween(38, 26, 38, 18);
+  eyes(g, 32, 6, 16, 4, 2);
+  tex('enemy_crab');
+
+  // ---------- 적: 멧돼지 ----------
+  g.fillStyle(0x7a5335, 1); // 귀
+  g.fillTriangle(20, 22, 26, 8, 30, 24);
+  g.fillTriangle(44, 22, 38, 8, 34, 24);
+  g.fillStyle(0x9c6b45, 1);
+  g.fillEllipse(32, 36, 38, 30); // 몸통
+  g.fillStyle(0x8a5c3a, 1);
+  g.fillEllipse(32, 30, 32, 16); // 등 그늘
+  // 주둥이
+  g.fillStyle(0x6e4a2e, 1);
+  g.fillEllipse(32, 45, 18, 12);
+  g.fillStyle(0x4a3020, 1);
+  g.fillCircle(28, 45, 2);
+  g.fillCircle(36, 45, 2);
+  // 엄니
+  g.fillStyle(WHITE, 1);
+  g.fillTriangle(24, 46, 27, 40, 22, 38);
+  g.fillTriangle(40, 46, 37, 40, 42, 38);
+  eyes(g, 32, 8, 30, 3.5, 1.8, true);
+  tex('enemy_boar');
+
+  // ---------- 적: 저주받은 유령 ----------
+  g.fillStyle(0xc7b8ff, 0.92);
+  g.fillCircle(32, 28, 16); // 머리
+  g.fillRect(16, 28, 32, 18); // 몸
+  g.fillCircle(21, 46, 6); // 물결 아랫단
+  g.fillCircle(32, 47, 6);
+  g.fillCircle(43, 46, 6);
+  g.fillStyle(0xe6dfff, 0.9);
+  g.fillCircle(32, 24, 11);
+  // 눈/입
+  g.fillStyle(0x3a2f5c, 1);
+  g.fillEllipse(26, 27, 6, 9);
+  g.fillEllipse(38, 27, 6, 9);
+  g.fillCircle(32, 38, 4);
+  tex('enemy_ghost');
+
+  // ---------- 적: 해적 ----------
+  g.fillStyle(0x5a636e, 1); // 몸
+  g.fillRoundedRect(19, 34, 26, 24, 9);
+  g.fillStyle(0x6b7280, 1);
+  g.fillRoundedRect(21, 36, 22, 14, 7);
+  g.fillStyle(0xc8a98a, 1); // 얼굴
+  g.fillCircle(32, 28, 11);
+  // 삼각모
+  g.fillStyle(0x2e2e38, 1);
+  g.fillEllipse(32, 18, 34, 9);
+  g.fillTriangle(18, 19, 46, 19, 32, 6);
+  g.fillStyle(0xffd45e, 1); // 해골 마크
+  g.fillCircle(32, 14, 3);
+  // 안대 + 눈
+  g.fillStyle(0x1a1a1a, 1);
+  g.fillCircle(28, 28, 3.5);
+  g.lineStyle(2, 0x1a1a1a, 1);
+  g.lineBetween(24, 24, 38, 26);
+  g.fillStyle(WHITE, 1);
+  g.fillCircle(37, 29, 3);
+  g.fillStyle(DARK, 1);
+  g.fillCircle(37, 29, 1.6);
+  tex('enemy_pirate');
+
+  // ---------- 보스: 왕집게게 ----------
+  g.fillStyle(0xc0392b, 1);
+  g.fillCircle(11, 40, 11);
+  g.fillCircle(53, 40, 11);
+  g.fillStyle(0xe74c3c, 1);
+  g.fillTriangle(11, 30, 2, 35, 11, 44);
+  g.fillTriangle(53, 30, 62, 35, 53, 44);
+  g.fillEllipse(32, 40, 40, 30);
+  g.fillStyle(0xc0392b, 1);
+  g.fillEllipse(32, 34, 34, 16);
+  g.lineStyle(3, 0xc0392b, 1);
+  g.lineBetween(26, 26, 26, 16);
+  g.lineBetween(38, 26, 38, 16);
+  eyes(g, 32, 7, 15, 4.5, 2.2, true);
+  crown(g, 32, 8, 22);
+  tex('boss_kingcrab');
+
+  // ---------- 보스: 성난 멧돼지 왕 ----------
+  g.fillStyle(0x5c3d24, 1);
+  g.fillTriangle(18, 22, 25, 6, 30, 24);
+  g.fillTriangle(46, 22, 39, 6, 34, 24);
+  g.fillStyle(0x7a4a2c, 1);
+  g.fillEllipse(32, 37, 44, 34);
+  g.fillStyle(0x633c22, 1);
+  g.fillEllipse(32, 30, 36, 16);
+  g.fillStyle(0x4a3020, 1);
+  g.fillEllipse(32, 46, 22, 14);
+  g.fillStyle(0x2a1a10, 1);
+  g.fillCircle(27, 46, 2.5);
+  g.fillCircle(37, 46, 2.5);
+  g.fillStyle(WHITE, 1);
+  g.fillTriangle(22, 48, 26, 38, 19, 36);
+  g.fillTriangle(42, 48, 38, 38, 45, 36);
+  g.fillStyle(0xff5a5a, 1); // 붉은 눈
+  g.fillCircle(25, 30, 3.5);
+  g.fillCircle(39, 30, 3.5);
+  g.fillStyle(DARK, 1);
+  g.fillCircle(25, 30, 1.6);
+  g.fillCircle(39, 30, 1.6);
+  crown(g, 32, 10, 22);
+  tex('boss_boarking');
+
+  // ---------- 보스: 저주받은 해적 선장 ----------
+  g.fillStyle(0x3a2b4d, 1);
+  g.fillRoundedRect(16, 34, 32, 26, 10);
+  g.fillStyle(0x4a3a5f, 1);
+  g.fillRoundedRect(19, 37, 26, 16, 8);
+  g.fillStyle(0xb89a7a, 1);
+  g.fillCircle(32, 27, 13);
+  // 큰 삼각모 + 금테
+  g.fillStyle(0x1a1626, 1);
+  g.fillEllipse(32, 16, 42, 11);
+  g.fillTriangle(13, 17, 51, 17, 32, 3);
+  g.fillStyle(0xffd45e, 1);
+  g.fillCircle(32, 12, 4);
+  g.fillTriangle(28, 12, 36, 12, 32, 6);
+  // 안대 + 붉은 눈
+  g.fillStyle(0x120f1a, 1);
+  g.fillCircle(27, 27, 4);
+  g.lineStyle(2.5, 0x120f1a, 1);
+  g.lineBetween(22, 22, 38, 25);
+  g.fillStyle(0xff5a5a, 1);
+  g.fillCircle(38, 28, 3.5);
+  g.fillStyle(DARK, 1);
+  g.fillCircle(38, 28, 1.6);
+  crown(g, 32, 4, 20);
+  tex('boss_captain');
+
+  // ---------- 투사체: 야자열매 ----------
+  g.fillStyle(0x6b4a2b, 1);
+  g.fillCircle(32, 32, 22);
+  g.fillStyle(0x543a22, 1);
+  g.fillCircle(32, 24, 4); // 코코넛 눈 3개
+  g.fillCircle(24, 36, 4);
+  g.fillCircle(40, 36, 4);
+  g.fillStyle(0x7d5836, 1);
+  g.fillEllipse(26, 26, 8, 5); // 하이라이트
+  tex('coconut');
+
+  // ---------- 투사체: 불가사리 ----------
+  g.fillStyle(0xffb347, 1);
+  const cx = 32;
+  const cy = 32;
+  const outer = 30;
+  const inner = 12;
+  g.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 === 0 ? outer : inner;
+    const a = (Math.PI / 5) * i - Math.PI / 2;
+    const x = cx + Math.cos(a) * r;
+    const y = cy + Math.sin(a) * r;
+    if (i === 0) g.moveTo(x, y);
+    else g.lineTo(x, y);
+  }
+  g.closePath();
+  g.fillPath();
+  g.fillStyle(0xe08a2c, 1); // 점무늬
+  g.fillCircle(32, 32, 4);
+  g.fillCircle(32, 20, 2.5);
+  g.fillCircle(22, 38, 2.5);
+  g.fillCircle(42, 38, 2.5);
+  tex('starfish_p');
+
+  // ---------- 소품: 야자수 ----------
+  g.fillStyle(0x000000, 0.15);
+  g.fillEllipse(32, 58, 28, 8);
+  g.fillStyle(0x8a6239, 1); // 줄기
+  g.fillRoundedRect(28, 26, 8, 30, 3);
+  g.fillStyle(0x2e8b57, 1); // 잎
+  g.fillEllipse(20, 22, 26, 12);
+  g.fillEllipse(44, 22, 26, 12);
+  g.fillEllipse(32, 16, 14, 22);
+  g.fillEllipse(18, 28, 22, 10);
+  g.fillEllipse(46, 28, 22, 10);
+  g.fillStyle(0x8b5a2b, 1); // 열매
+  g.fillCircle(29, 27, 3);
+  g.fillCircle(35, 28, 3);
+  tex('palm');
+
+  // ---------- 소품: 바위 ----------
+  g.fillStyle(0x000000, 0.15);
+  g.fillEllipse(32, 46, 40, 10);
+  g.fillStyle(0x8a8f96, 1);
+  g.fillEllipse(32, 36, 40, 26);
+  g.fillStyle(0x9ba0a7, 1);
+  g.fillEllipse(28, 30, 26, 14);
+  g.fillStyle(0x767b82, 1);
+  g.fillEllipse(40, 40, 20, 10);
+  tex('rock');
+
+  // ---------- 소품: 수풀 ----------
+  g.fillStyle(0x000000, 0.12);
+  g.fillEllipse(32, 48, 36, 8);
+  g.fillStyle(0x3aa76d, 1);
+  g.fillCircle(20, 40, 12);
+  g.fillCircle(44, 40, 12);
+  g.fillCircle(32, 34, 14);
+  g.fillStyle(0x4fc07f, 1);
+  g.fillCircle(26, 34, 7);
+  g.fillCircle(40, 36, 7);
+  tex('bush');
+
+  g.destroy();
+}

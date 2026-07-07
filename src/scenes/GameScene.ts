@@ -120,6 +120,34 @@ export default class GameScene extends Phaser.Scene {
       })
       .setDepth(-80);
 
+    // 모래섬 바닥
+    this.add.ellipse(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 40, GAME_WIDTH * 1.25, GAME_HEIGHT * 0.72, COLORS.sand, 0.1).setDepth(-88);
+    this.add.ellipse(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 40, GAME_WIDTH * 0.95, GAME_HEIGHT * 0.55, COLORS.sand, 0.1).setDepth(-87);
+
+    // 배경 소품 (야자수/바위/수풀) — 섬마다 다르게
+    const propSets: Record<number, string[]> = {
+      0: ['palm', 'rock', 'bush', 'rock', 'palm', 'bush'],
+      1: ['palm', 'bush', 'palm', 'bush', 'rock', 'bush'],
+      2: ['rock', 'rock', 'palm', 'rock', 'bush', 'rock'],
+    };
+    const props = propSets[this.island.id] ?? propSets[0];
+    const spots = [
+      [48, HUD_HEIGHT + 64],
+      [GAME_WIDTH - 50, HUD_HEIGHT + 84],
+      [72, GAME_HEIGHT - 96],
+      [GAME_WIDTH - 66, GAME_HEIGHT - 72],
+      [GAME_WIDTH / 2 + 40, HUD_HEIGHT + 48],
+      [GAME_WIDTH - 96, GAME_HEIGHT / 2 + 30],
+    ];
+    props.forEach((key, i) => {
+      const [sx, sy] = spots[i % spots.length];
+      this.add
+        .image(sx + Phaser.Math.Between(-14, 14), sy + Phaser.Math.Between(-10, 10), key)
+        .setDepth(-70)
+        .setAlpha(0.92)
+        .setScale(Phaser.Math.FloatBetween(0.7, 1.1));
+    });
+
     // 플레이 영역(HUD 아래) 밖으로 못 나가게
     this.physics.world.setBounds(6, HUD_HEIGHT, GAME_WIDTH - 12, GAME_HEIGHT - HUD_HEIGHT - 6);
 
@@ -229,6 +257,9 @@ export default class GameScene extends Phaser.Scene {
     } else {
       body.setVelocity(0, 0);
     }
+    // 이동 방향에 따라 캐릭터 좌우 반전
+    if (dx < -0.1) this.player.setFlipX(true);
+    else if (dx > 0.1) this.player.setFlipX(false);
   }
 
   // ---------------- 적 관련 (WaveManager/Weapons가 호출) ----------------
@@ -421,8 +452,8 @@ export default class GameScene extends Phaser.Scene {
       this.cameras.main.shake(140, 0.008);
       this.fx.hurtFlash();
       Sfx.hurt();
-      this.player.setTint(COLORS.danger);
-      this.time.delayedCall(120, () => this.player.setTint(COLORS.player));
+      this.player.setTintFill(COLORS.danger);
+      this.time.delayedCall(120, () => this.player.clearTint());
       if (this.player.isDead()) this.defeat();
     }
   };

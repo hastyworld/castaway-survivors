@@ -22,15 +22,14 @@ export default class Player extends Phaser.Physics.Arcade.Image {
   invulnUntil = 0; // 피격 무적 종료 시각(ms)
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene, x, y, 'circle');
+    super(scene, x, y, 'player');
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    this.setTint(COLORS.player);
-    this.setDisplaySize(34, 34);
-    // 원형 히트박스 (텍스처 원본 64px 기준 반지름 32)
+    this.setDisplaySize(42, 42);
+    // 살짝 관대한 원형 히트박스 (텍스처 64px 중앙 반지름 24)
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setCircle(32, 0, 0);
+    body.setCircle(24, 8, 8);
     body.setCollideWorldBounds(true);
 
     // 영구 성장(②) 반영

@@ -40,8 +40,8 @@ export default class TitleScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     // 주인공 미리보기
-    const hero = this.add.image(GAME_WIDTH / 2, 400, 'circle').setTint(COLORS.player).setDisplaySize(56, 56);
-    this.tweens.add({ targets: hero, y: 388, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    const hero = this.add.image(GAME_WIDTH / 2, 400, 'player').setDisplaySize(80, 80);
+    this.tweens.add({ targets: hero, y: 384, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
     makeButton(this, GAME_WIDTH / 2, 560, '여정 시작', () => this.scene.start('Map'), { width: 260, height: 62, fontSize: 22 });
     makeButton(this, GAME_WIDTH / 2, 636, '상점 (영구 성장)', () => this.scene.start('Shop'), {

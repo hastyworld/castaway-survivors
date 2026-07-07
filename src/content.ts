@@ -15,11 +15,11 @@ import {
 // ---------------- 적 원형(base) ----------------
 // 섬의 difficulty 배수를 곱해서 최종 능력치가 됩니다.
 export const ENEMIES: Record<string, EnemyDef> = {
-  bug: { id: 'bug', name: '모기떼', color: COLORS.bug, hp: 12, speed: 78, damage: 5, xp: 1, radius: 10, gold: 1 },
-  crab: { id: 'crab', name: '집게게', color: COLORS.crab, hp: 34, speed: 50, damage: 9, xp: 2, radius: 15, gold: 2 },
-  boar: { id: 'boar', name: '멧돼지', color: COLORS.boar, hp: 78, speed: 64, damage: 15, xp: 4, radius: 19, gold: 3 },
-  ghost: { id: 'ghost', name: '저주받은 유령', color: COLORS.ghost, hp: 55, speed: 90, damage: 12, xp: 3, radius: 15, gold: 3 },
-  pirate: { id: 'pirate', name: '해적', color: COLORS.pirate_enemy, hp: 110, speed: 58, damage: 18, xp: 5, radius: 18, gold: 4 },
+  bug: { id: 'bug', name: '모기떼', color: COLORS.bug, texture: 'enemy_bug', hp: 12, speed: 78, damage: 5, xp: 1, radius: 12, gold: 1 },
+  crab: { id: 'crab', name: '집게게', color: COLORS.crab, texture: 'enemy_crab', hp: 34, speed: 50, damage: 9, xp: 2, radius: 17, gold: 2 },
+  boar: { id: 'boar', name: '멧돼지', color: COLORS.boar, texture: 'enemy_boar', hp: 78, speed: 64, damage: 15, xp: 4, radius: 21, gold: 3 },
+  ghost: { id: 'ghost', name: '저주받은 유령', color: COLORS.ghost, texture: 'enemy_ghost', hp: 55, speed: 90, damage: 12, xp: 3, radius: 17, gold: 3 },
+  pirate: { id: 'pirate', name: '해적', color: COLORS.pirate_enemy, texture: 'enemy_pirate', hp: 110, speed: 58, damage: 18, xp: 5, radius: 20, gold: 4 },
 };
 
 // ---------------- 무기(판 안 성장 ①) ----------------
@@ -60,7 +60,7 @@ export const ISLANDS: IslandDef[] = [
       wave(['crab'], 24, 420),
       wave(['bug', 'crab'], 30, 360),
     ],
-    boss: { id: 'kingcrab', name: '왕집게게', color: COLORS.boss, hp: 650, speed: 42, damage: 20, xp: 0, radius: 46, gold: 0 },
+    boss: { id: 'kingcrab', name: '왕집게게', color: COLORS.boss, texture: 'boss_kingcrab', hp: 650, speed: 42, damage: 20, xp: 0, radius: 46, gold: 0 },
     reward: 60,
   },
   {
@@ -76,7 +76,7 @@ export const ISLANDS: IslandDef[] = [
       wave(['crab', 'boar', 'ghost'], 30, 460),
       wave(['boar', 'ghost'], 34, 400),
     ],
-    boss: { id: 'boarking', name: '성난 멧돼지 왕', color: COLORS.boss, hp: 1250, speed: 70, damage: 26, xp: 0, radius: 52, gold: 0 },
+    boss: { id: 'boarking', name: '성난 멧돼지 왕', color: COLORS.boss, texture: 'boss_boarking', hp: 1250, speed: 70, damage: 26, xp: 0, radius: 52, gold: 0 },
     reward: 110,
   },
   {
@@ -92,7 +92,7 @@ export const ISLANDS: IslandDef[] = [
       wave(['ghost', 'pirate'], 36, 430),
       wave(['boar', 'ghost', 'pirate'], 42, 360),
     ],
-    boss: { id: 'captain', name: '저주받은 해적 선장', color: COLORS.boss, hp: 2400, speed: 60, damage: 34, xp: 0, radius: 56, gold: 0 },
+    boss: { id: 'captain', name: '저주받은 해적 선장', color: COLORS.boss, texture: 'boss_captain', hp: 2400, speed: 60, damage: 34, xp: 0, radius: 56, gold: 0 },
     reward: 200,
   },
 ];
