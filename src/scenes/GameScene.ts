@@ -10,6 +10,7 @@ import {
   GAME_WIDTH,
   GAME_HEIGHT,
   HUD_HEIGHT,
+  BOTTOM_MARGIN,
   EnemyDef,
   IslandDef,
   PassiveId,
@@ -131,13 +132,14 @@ export default class GameScene extends Phaser.Scene {
       2: ['rock', 'rock', 'palm', 'rock', 'bush', 'rock'],
     };
     const props = propSets[this.island.id] ?? propSets[0];
+    const pb = GAME_HEIGHT - BOTTOM_MARGIN;
     const spots = [
       [48, HUD_HEIGHT + 64],
       [GAME_WIDTH - 50, HUD_HEIGHT + 84],
-      [72, GAME_HEIGHT - 96],
-      [GAME_WIDTH - 66, GAME_HEIGHT - 72],
+      [72, pb - 50],
+      [GAME_WIDTH - 66, pb - 30],
       [GAME_WIDTH / 2 + 40, HUD_HEIGHT + 48],
-      [GAME_WIDTH - 96, GAME_HEIGHT / 2 + 30],
+      [GAME_WIDTH - 96, (HUD_HEIGHT + pb) / 2],
     ];
     props.forEach((key, i) => {
       const [sx, sy] = spots[i % spots.length];
@@ -148,16 +150,31 @@ export default class GameScene extends Phaser.Scene {
         .setScale(Phaser.Math.FloatBetween(0.7, 1.1));
     });
 
-    // 플레이 영역(HUD 아래) 밖으로 못 나가게
-    this.physics.world.setBounds(6, HUD_HEIGHT, GAME_WIDTH - 12, GAME_HEIGHT - HUD_HEIGHT - 6);
+    // 플레이 영역: HUD 아래 ~ 하단 조작 세이프존 위. 캐릭터는 여기 안에서만.
+    const playBottom = GAME_HEIGHT - BOTTOM_MARGIN;
+    this.physics.world.setBounds(6, HUD_HEIGHT, GAME_WIDTH - 12, playBottom - HUD_HEIGHT);
+
+    // 하단 조작 세이프존 표시 (엄지 두는 곳 — 여기엔 캐릭터가 안 옴)
+    this.add.rectangle(0, playBottom, GAME_WIDTH, BOTTOM_MARGIN, 0x000000, 0.16).setOrigin(0, 0).setDepth(2);
+    this.add.rectangle(0, playBottom, GAME_WIDTH, 2, COLORS.accent, 0.25).setOrigin(0, 0).setDepth(2);
+    const hint = this.add
+      .text(GAME_WIDTH / 2, playBottom + BOTTOM_MARGIN / 2, '↑ 이 아래를 손가락으로 드래그해서 이동', {
+        fontFamily: FONT,
+        fontSize: '14px',
+        color: CSS.textDim,
+      })
+      .setOrigin(0.5)
+      .setDepth(3)
+      .setAlpha(0.7);
+    this.tweens.add({ targets: hint, alpha: 0, delay: 5000, duration: 1200, onComplete: () => hint.destroy() });
 
     // 그룹
     this.enemies = this.physics.add.group();
     this.projectiles = this.physics.add.group();
     this.gems = this.physics.add.group();
 
-    // 플레이어
-    this.player = new Player(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 120);
+    // 플레이어 (플레이 영역 중앙쯤)
+    this.player = new Player(this, GAME_WIDTH / 2, (HUD_HEIGHT + playBottom) / 2 + 60);
     this.player.setDepth(10);
 
     // 시스템
@@ -306,16 +323,18 @@ export default class GameScene extends Phaser.Scene {
 
   private randomEdge(): { x: number; y: number } {
     const m = 40;
+    const top = HUD_HEIGHT;
+    const bottom = GAME_HEIGHT - BOTTOM_MARGIN; // 플레이 영역 하단
     const side = Phaser.Math.Between(0, 3);
     switch (side) {
       case 0:
-        return { x: Phaser.Math.Between(0, GAME_WIDTH), y: HUD_HEIGHT - m };
+        return { x: Phaser.Math.Between(0, GAME_WIDTH), y: top - m };
       case 1:
-        return { x: GAME_WIDTH + m, y: Phaser.Math.Between(HUD_HEIGHT, GAME_HEIGHT) };
+        return { x: GAME_WIDTH + m, y: Phaser.Math.Between(top, bottom) };
       case 2:
-        return { x: Phaser.Math.Between(0, GAME_WIDTH), y: GAME_HEIGHT + m };
+        return { x: Phaser.Math.Between(0, GAME_WIDTH), y: bottom + m };
       default:
-        return { x: -m, y: Phaser.Math.Between(HUD_HEIGHT, GAME_HEIGHT) };
+        return { x: -m, y: Phaser.Math.Between(top, bottom) };
     }
   }
 

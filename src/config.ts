@@ -10,6 +10,9 @@ export const GAME_HEIGHT = 960;
 // HUD(상단 정보바) 높이 — 이 아래가 실제 플레이 영역
 export const HUD_HEIGHT = 96;
 
+// 하단 조작 세이프존 높이 — 엄지가 쉬는 곳. 캐릭터는 이 위로만 다님(손가락에 안 가리게)
+export const BOTTOM_MARGIN = 150;
+
 // 색상 팔레트 (무인도/바다 톤). 하드코딩 대신 여기서 가져다 씁니다.
 export const COLORS = {
   ocean: 0x0d3b5c, // 깊은 바다
@@ -27,7 +30,18 @@ export const COLORS = {
   boar: 0x9c6b45, // 멧돼지
   ghost: 0xc7b8ff, // 유령
   pirate_enemy: 0x6b7280, // 해적
+  jelly: 0xff9ecf, // 해파리
+  eel: 0x4bbf9a, // 바다뱀
+  skeleton: 0xe8e4d8, // 해골
   boss: 0xff4d6d, // 보스
+
+  // 섬 배경 테마용
+  swamp: 0x3b4a2a, // 늪지
+  volcano: 0x5a2a2a, // 화산
+  arctic: 0x3a5a6a, // 빙하
+  abyss: 0x1a1030, // 심연
+  sunset: 0x5a3a4a, // 노을
+  reef: 0x1f6e6a, // 산호초
 
   coconut: 0x6b4a2b, // 야자열매(기본 무기)
   starfish: 0xffcf4d, // 불가사리(관통)

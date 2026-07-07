@@ -279,6 +279,123 @@ export function generateArt(scene: Phaser.Scene): void {
   crown(g, 32, 4, 20);
   tex('boss_captain');
 
+  // ---------- 적: 해파리 ----------
+  g.fillStyle(0xff9ecf, 0.9);
+  g.fillCircle(32, 26, 16);
+  g.fillStyle(0xffb8dd, 0.9);
+  g.fillEllipse(32, 21, 24, 12);
+  g.fillStyle(0xff9ecf, 0.9);
+  g.fillCircle(20, 38, 5);
+  g.fillCircle(30, 40, 5);
+  g.fillCircle(40, 40, 5);
+  g.fillCircle(48, 38, 5);
+  g.lineStyle(2.5, 0xff9ecf, 0.8);
+  g.lineBetween(20, 40, 18, 56);
+  g.lineBetween(29, 42, 30, 58);
+  g.lineBetween(39, 42, 38, 58);
+  g.lineBetween(48, 40, 50, 56);
+  eyes(g, 32, 5, 26, 3, 1.5);
+  tex('enemy_jelly');
+
+  // ---------- 적: 바다뱀 ----------
+  g.fillStyle(0x3fa886, 1);
+  g.fillCircle(12, 50, 5);
+  g.fillCircle(18, 45, 6);
+  g.fillCircle(25, 43, 6.5);
+  g.fillCircle(32, 46, 7);
+  g.fillCircle(39, 47, 7);
+  g.fillStyle(0x4bbf9a, 1);
+  g.fillCircle(47, 40, 9); // 머리
+  g.fillStyle(0x3fa886, 1);
+  g.fillTriangle(53, 36, 61, 41, 53, 46); // 주둥이
+  eyes(g, 46, 3, 36, 2.6, 1.3, true);
+  g.fillStyle(WHITE, 1);
+  g.fillTriangle(49, 46, 51, 52, 53, 46); // 송곳니
+  tex('enemy_eel');
+
+  // ---------- 적: 해골 병사 ----------
+  g.fillStyle(0xe8e4d8, 1);
+  g.fillRoundedRect(24, 34, 16, 20, 5); // 몸
+  g.fillStyle(0xcfcabb, 1);
+  g.fillRect(25, 39, 14, 2);
+  g.fillRect(25, 44, 14, 2);
+  g.fillRect(25, 49, 14, 2);
+  g.fillStyle(0xe8e4d8, 1);
+  g.fillCircle(20, 40, 3.5); // 팔뼈
+  g.fillCircle(44, 40, 3.5);
+  g.fillStyle(0xf3f0e7, 1); // 두개골
+  g.fillCircle(32, 25, 12);
+  g.fillRect(26, 30, 12, 6);
+  g.fillStyle(0x1a1a1a, 1);
+  g.fillCircle(28, 25, 3.5); // 눈구멍
+  g.fillCircle(36, 25, 3.5);
+  g.fillTriangle(31, 29, 33, 29, 32, 33); // 코
+  g.fillStyle(0xcfcabb, 1);
+  g.fillRect(28, 34, 2, 3); // 이빨
+  g.fillRect(31, 34, 2, 3);
+  g.fillRect(34, 34, 2, 3);
+  tex('enemy_skeleton');
+
+  // ---------- 보스: 문어대왕 ----------
+  g.fillStyle(0x7d3c98, 1); // 다리
+  [
+    [12, 52],
+    [21, 58],
+    [32, 60],
+    [43, 58],
+    [52, 52],
+  ].forEach(([x, y]) => g.fillTriangle(32, 42, x - 5, y, x + 5, y));
+  g.fillStyle(0x9b59b6, 1);
+  g.fillCircle(32, 28, 19);
+  g.fillStyle(0xac6bc7, 1);
+  g.fillEllipse(32, 22, 26, 14);
+  g.fillStyle(0x6a2f82, 1); // 빨판
+  g.fillCircle(24, 44, 2.5);
+  g.fillCircle(32, 47, 2.5);
+  g.fillCircle(40, 44, 2.5);
+  eyes(g, 32, 8, 28, 5, 2.6, true);
+  crown(g, 32, 7, 22);
+  tex('boss_octopus');
+
+  // ---------- 보스: 심해 대왕뱀 ----------
+  g.fillStyle(0x1f6e5f, 1);
+  g.fillCircle(13, 52, 8);
+  g.fillCircle(21, 46, 9);
+  g.fillCircle(30, 48, 10);
+  g.fillStyle(0x2e8b78, 1);
+  g.fillEllipse(42, 36, 24, 20); // 머리
+  g.fillStyle(0x1f6e5f, 1);
+  g.fillTriangle(52, 32, 62, 38, 52, 44); // 주둥이
+  g.fillStyle(0xff5a5a, 1);
+  g.fillCircle(40, 32, 4);
+  g.fillCircle(48, 32, 4);
+  g.fillStyle(DARK, 1);
+  g.fillCircle(40, 32, 1.8);
+  g.fillCircle(48, 32, 1.8);
+  g.fillStyle(WHITE, 1);
+  g.fillTriangle(48, 44, 51, 52, 54, 44); // 송곳니
+  crown(g, 42, 22, 22);
+  tex('boss_serpent');
+
+  // ---------- 보스: 유령 군주 ----------
+  g.fillStyle(0x6a4c93, 0.95);
+  g.fillCircle(32, 30, 19);
+  g.fillRect(13, 30, 38, 20);
+  g.fillCircle(20, 50, 6);
+  g.fillCircle(32, 52, 6);
+  g.fillCircle(44, 50, 6);
+  g.fillStyle(0x8368b0, 0.95);
+  g.fillCircle(32, 26, 13);
+  g.fillStyle(0xe8e4d8, 1); // 해골 얼굴
+  g.fillCircle(32, 27, 11);
+  g.fillStyle(0x00e5ff, 1); // 빛나는 눈
+  g.fillCircle(28, 27, 3.2);
+  g.fillCircle(36, 27, 3.2);
+  g.fillStyle(DARK, 1);
+  g.fillTriangle(31, 31, 33, 31, 32, 34);
+  crown(g, 32, 8, 22);
+  tex('boss_lich');
+
   // ---------- 투사체: 야자열매 ----------
   g.fillStyle(0x6b4a2b, 1);
   g.fillCircle(32, 32, 22);

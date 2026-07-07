@@ -3,6 +3,7 @@
 // 판 밖 영구 성장(②) + 진행도 + 탈것 진화 상태를 보관합니다.
 // 기획안 5번: 성장은 3겹으로 분리. 여기 저장되는 건 ②(영구)와 ③(탈것).
 // ============================================================
+import { VEHICLE_CHAIN } from './content';
 
 const KEY = 'castaway_survivors_save_v1';
 
@@ -93,8 +94,7 @@ export function isIslandUnlocked(islandId: number): boolean {
 // 현재 탈것(진화 상징 ③): 깬 섬 수에 따라
 export function currentVehicle(): string {
   const n = load().clearedIslands.length;
-  const chain = ['뗏목', '나룻배', '범선', '증기선'];
-  return chain[Math.min(n, chain.length - 1)];
+  return VEHICLE_CHAIN[Math.min(n, VEHICLE_CHAIN.length - 1)];
 }
 
 export function permCost(u: PermUpgrade, level: number): number {

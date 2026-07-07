@@ -1,12 +1,13 @@
 // ============================================================
-// MapScene.ts — 여정 지도 (섬 선택). 기획안 6단계: 섬→탈출→다음 섬.
+// MapScene.ts — 여정 지도 (레벨 선택 노드맵). 섬 12개가 한 화면에.
 // ============================================================
 import Phaser from 'phaser';
 import { CSS, FONT, GAME_WIDTH, GAME_HEIGHT, COLORS } from '../config';
 import { drawGradient } from '../ui/Background';
 import { makeButton } from '../ui/Button';
 import { ISLANDS } from '../content';
-import { load, isIslandUnlocked } from '../save';
+import { load, isIslandUnlocked, currentVehicle } from '../save';
+import { Sfx } from '../systems/Sfx';
 
 export default class MapScene extends Phaser.Scene {
   constructor() {
@@ -18,77 +19,79 @@ export default class MapScene extends Phaser.Scene {
     const data = load();
 
     this.add
-      .text(GAME_WIDTH / 2, 60, '여정 지도', { fontFamily: FONT, fontSize: '32px', color: CSS.text, fontStyle: 'bold' })
+      .text(GAME_WIDTH / 2, 46, '여정 지도', { fontFamily: FONT, fontSize: '30px', color: CSS.text, fontStyle: 'bold' })
       .setOrigin(0.5);
     this.add
-      .text(GAME_WIDTH / 2, 98, '섬을 정복하고 배를 만들어 다음 섬으로 탈출하세요', {
+      .text(GAME_WIDTH / 2, 78, `섬 ${ISLANDS.length}개  ·  탈것: ${currentVehicle()}  ·  ◈${data.gold}`, {
         fontFamily: FONT,
         fontSize: '13px',
-        color: CSS.textDim,
+        color: CSS.accent,
       })
       .setOrigin(0.5);
 
-    const startY = 150;
-    const rowH = 190;
+    // 노드 위치 계산 (3열 × 4행 지그재그)
+    const cols = 3;
+    const marginX = 80;
+    const startY = 168;
+    const rowGap = 150;
+    const colGap = (GAME_WIDTH - marginX * 2) / (cols - 1);
+    const pos: { x: number; y: number }[] = ISLANDS.map((_, i) => {
+      const r = Math.floor(i / cols);
+      const cRaw = i % cols;
+      const c = r % 2 === 0 ? cRaw : cols - 1 - cRaw; // 뱀처럼 지그재그
+      return { x: marginX + c * colGap, y: startY + r * rowGap };
+    });
+
+    // 연결선 (노드 뒤에)
+    const line = this.add.graphics().setDepth(0);
+    line.lineStyle(4, 0xffffff, 0.12);
+    for (let i = 0; i < pos.length - 1; i++) {
+      line.lineBetween(pos[i].x, pos[i].y, pos[i + 1].x, pos[i + 1].y);
+    }
+
+    // 다음에 도전할 섬(가장 낮은 미클리어 해금 섬) 강조용
+    const nextId = ISLANDS.findIndex((isl) => isIslandUnlocked(isl.id) && !data.clearedIslands.includes(isl.id));
 
     ISLANDS.forEach((island, i) => {
-      const y = startY + i * rowH;
+      const { x, y } = pos[i];
       const unlocked = isIslandUnlocked(island.id);
       const cleared = data.clearedIslands.includes(island.id);
 
-      const panel = this.add
-        .rectangle(GAME_WIDTH / 2, y + rowH / 2 - 12, GAME_WIDTH - 44, rowH - 24, COLORS.panel, unlocked ? 0.95 : 0.5)
-        .setStrokeStyle(3, cleared ? COLORS.accent : COLORS.panelBorder);
-
-      // 섬 아이콘
-      this.add.image(panel.x - panel.width / 2 + 56, y + rowH / 2 - 12, 'circle')
-        .setTint(island.bgBottom)
-        .setDisplaySize(64, 64)
-        .setAlpha(unlocked ? 1 : 0.4);
-
-      const tx = panel.x - panel.width / 2 + 104;
-      this.add
-        .text(tx, y + 22, `섬 ${island.id + 1}. ${island.name}`, {
+      const node = this.add.container(x, y).setDepth(1);
+      const border = cleared ? COLORS.accent : unlocked ? COLORS.panelBorder : 0x3a4652;
+      const ring = this.add.circle(0, 0, 27, island.bgBottom, unlocked ? 1 : 0.35).setStrokeStyle(4, border, 1);
+      const label = cleared ? '✓' : String(i + 1);
+      const num = this.add
+        .text(0, 0, label, {
           fontFamily: FONT,
-          fontSize: '20px',
-          color: unlocked ? CSS.text : '#6f8496',
+          fontSize: cleared ? '26px' : '22px',
+          color: unlocked ? (cleared ? CSS.accent : '#ffffff') : '#5a6a78',
           fontStyle: 'bold',
         })
-        .setOrigin(0, 0);
-      this.add
-        .text(tx, y + 52, `탈출 탈것: ${island.vehicle}  ·  웨이브 ${island.waves.length} + 보스`, {
-          fontFamily: FONT,
-          fontSize: '13px',
-          color: CSS.textDim,
-        })
-        .setOrigin(0, 0);
-      this.add
-        .text(tx, y + 74, cleared ? '✔ 클리어 완료' : unlocked ? '도전 가능' : '🔒 이전 섬을 먼저 클리어', {
-          fontFamily: FONT,
-          fontSize: '13px',
-          color: cleared ? CSS.green : unlocked ? CSS.accent : '#6f8496',
-        })
-        .setOrigin(0, 0);
+        .setOrigin(0.5);
+      node.add([ring, num]);
 
-      makeButton(
-        this,
-        panel.x,
-        y + rowH / 2 + 44,
-        unlocked ? (cleared ? '다시 도전' : '출발!') : '잠김',
-        () => this.scene.start('Game', { islandId: island.id }),
-        {
-          width: panel.width - 40,
-          height: 42,
-          fontSize: 17,
-          disabled: !unlocked,
-          fill: cleared ? COLORS.panelBorder : COLORS.accent,
-          textColor: cleared ? '#ffffff' : '#3a2a00',
+      this.add
+        .text(x, y + 36, island.name, { fontFamily: FONT, fontSize: '11px', color: unlocked ? CSS.textDim : '#566573' })
+        .setOrigin(0.5);
+
+      if (unlocked) {
+        ring.setInteractive({ useHandCursor: true });
+        ring.on('pointerover', () => this.tweens.add({ targets: node, scale: 1.12, duration: 90 }));
+        ring.on('pointerout', () => this.tweens.add({ targets: node, scale: 1, duration: 90 }));
+        ring.on('pointerup', () => {
+          Sfx.click();
+          this.scene.start('Game', { islandId: island.id });
+        });
+        if (island.id === nextId) {
+          // 도전할 섬은 은은하게 맥동
+          this.tweens.add({ targets: node, scale: 1.1, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
         }
-      );
+      }
     });
 
-    makeButton(this, GAME_WIDTH / 2, GAME_HEIGHT - 46, '← 타이틀', () => this.scene.start('Title'), {
-      width: 150,
+    makeButton(this, GAME_WIDTH / 2, GAME_HEIGHT - 44, '← 타이틀', () => this.scene.start('Title'), {
+      width: 160,
       height: 46,
       fill: COLORS.panelBorder,
       textColor: '#ffffff',
