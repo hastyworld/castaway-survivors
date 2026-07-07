@@ -16,6 +16,9 @@ Write-Host "[1/4] 웹 빌드..." -ForegroundColor Cyan
 npm run build
 
 Write-Host "[2/4] 안드로이드 프로젝트 동기화..." -ForegroundColor Cyan
+# ⚠ 다운로드용 APK(public/castaway.apk)가 dist 로 복사되면 앱 안에 APK가 중첩되어
+#    용량이 2배로 불어남 → cap sync 전에 dist 안의 apk 제거 (raw GitHub 주소는 repo 파일을 직접 읽음)
+Get-ChildItem "$root\dist" -Filter *.apk -ErrorAction SilentlyContinue | Remove-Item -Force
 if (-not (Test-Path "$root\android")) { npx cap add android } else { npx cap sync android }
 
 # 한글 경로 우회 + SDK 위치 보정
