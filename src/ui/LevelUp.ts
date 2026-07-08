@@ -6,7 +6,7 @@ import Phaser from 'phaser';
 import { CSS, FONT, GAME_WIDTH, GAME_HEIGHT, COLORS } from '../config';
 
 export interface UpgradeOption {
-  kind: 'weapon' | 'passive';
+  kind: 'weapon' | 'passive' | 'evolve';
   id: string;
   title: string;
   tag: string; // 'NEW' 또는 'Lv.n → n+1'
@@ -31,7 +31,11 @@ export default class LevelUp {
       .text(GAME_WIDTH / 2, 150, '레벨 업!', { fontFamily: FONT, fontSize: '34px', color: CSS.accent, fontStyle: 'bold' })
       .setOrigin(0.5);
     const sub = s.add
-      .text(GAME_WIDTH / 2, 190, '하나를 골라 더 강해지세요', { fontFamily: FONT, fontSize: '15px', color: CSS.textDim })
+      .text(GAME_WIDTH / 2, 190, "카드를 '눌렀다 떼서' 선택하세요 (스치기만 하면 안 됨)", {
+        fontFamily: FONT,
+        fontSize: '14px',
+        color: CSS.textDim,
+      })
       .setOrigin(0.5);
     c.add([dim, title, sub]);
 
@@ -39,6 +43,11 @@ export default class LevelUp {
     const cardH = 120;
     const startY = 250;
     const gap = 20;
+
+    // 팝업이 뜬 직후 짧은 시간은 선택 무시 (조이스틱 떼는 손가락의 오작동 방지)
+    const armAt = s.time.now + 420;
+    // 카드에서 '눌렀다 뗀' 경우에만 선택 → 지나가는 터치로 선택되지 않음
+    let pressed: Phaser.GameObjects.Rectangle | null = null;
 
     options.forEach((opt, i) => {
       const y = startY + i * (cardH + gap);
@@ -66,13 +75,21 @@ export default class LevelUp {
       card.add([bg, icon, tTitle, tTag, tDesc]);
       c.add(card);
 
-      const pick = () => {
+      const hi = (on: boolean) => bg.setFillStyle(on ? 0x1a4363 : COLORS.panel);
+      bg.on('pointerdown', () => {
+        if (s.time.now < armAt) return;
+        pressed = bg;
+        hi(true);
+      });
+      bg.on('pointerout', () => {
+        if (pressed === bg) pressed = null;
+        hi(false);
+      });
+      bg.on('pointerup', () => {
+        if (s.time.now < armAt || pressed !== bg) return; // 이 카드에서 누르고 뗀 경우만
         this.close();
         onPick(opt);
-      };
-      bg.on('pointerover', () => bg.setFillStyle(0x16374f));
-      bg.on('pointerout', () => bg.setFillStyle(COLORS.panel));
-      bg.on('pointerup', pick);
+      });
 
       // 등장 애니메이션
       card.setScale(0.85).setAlpha(0);
