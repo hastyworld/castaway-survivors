@@ -23,6 +23,10 @@ export const ENEMIES: Record<string, EnemyDef> = {
   jelly: { id: 'jelly', name: '해파리', color: COLORS.jelly, texture: 'enemy_jelly', hp: 46, speed: 55, damage: 11, xp: 3, radius: 17, gold: 3 },
   eel: { id: 'eel', name: '바다뱀', color: COLORS.eel, texture: 'enemy_eel', hp: 62, speed: 105, damage: 13, xp: 3, radius: 17, gold: 3 },
   skeleton: { id: 'skeleton', name: '해골 병사', color: COLORS.skeleton, texture: 'enemy_skeleton', hp: 95, speed: 62, damage: 17, xp: 5, radius: 20, gold: 4 },
+  bat: { id: 'bat', name: '흡혈박쥐', color: 0x6a5a80, texture: 'enemy_bat', hp: 40, speed: 122, damage: 10, xp: 3, radius: 15, gold: 3 },
+  slug: { id: 'slug', name: '독 민달팽이', color: 0x6cbf5a, texture: 'enemy_slug', hp: 130, speed: 34, damage: 14, xp: 4, radius: 18, gold: 4 },
+  golem: { id: 'golem', name: '바위 골렘', color: 0x8f8c84, texture: 'enemy_golem', hp: 210, speed: 40, damage: 22, xp: 7, radius: 22, gold: 5 },
+  shark: { id: 'shark', name: '땅상어', color: 0x6b7d8a, texture: 'enemy_shark', hp: 92, speed: 100, damage: 18, xp: 5, radius: 20, gold: 4 },
 };
 
 // ---------------- 무기(판 안 성장 ①) ----------------
@@ -47,62 +51,92 @@ function wave(enemies: string[], count: number, interval: number): WaveDef {
   return { enemies, count, interval };
 }
 
-// ---------------- 섬(매크로 진행) ----------------
-// 기획안 4번: 섬 3개. 초안에서는 섬당 웨이브 4개 + 보스 1로 압축.
-// 섬 스펙 표 — 여기에 한 줄 추가하면 섬이 늘어납니다.
-interface IslandSpec {
+// ============================================================
+// 매크로 진행: 섬(Island) > 판(Run) > 스테이지(Stage)
+//  - 판 하나 = 스테이지 3~6개 + 마지막 보스
+//  - 섬 하나 = 판 RUNS_PER_ISLAND개 (절차 생성)
+//  - 섬은 테마별로 아주 다양 (아래 표만 늘리면 섬 추가)
+// ============================================================
+
+export interface IslandTheme {
   name: string;
+  vehicle: string;
   bgTop: number;
   bgBottom: number;
-  difficulty: number;
-  pool: string[]; // 등장 적 id
-  bossName: string;
-  bossTex: string;
-  bossHp: number;
-  bossDmg: number;
-  bossRadius: number;
-  reward: number;
+  baseDiff: number;
+  enemyPool: string[]; // 이 섬에서 나오는 적
+  bossPool: string[]; // 이 섬 보스 후보 (텍스처 키)
 }
 
-// 탈것 진화 체인 (섬 클리어할수록)
-export const VEHICLE_CHAIN = ['뗏목', '나룻배', '카누', '돛단배', '범선', '증기선', '쾌속정', '요트', '잠수함', '항공모함', '유령선', '전설의 방주'];
-
-const ISLAND_SPECS: IslandSpec[] = [
-  { name: '작은 모래섬', bgTop: COLORS.ocean, bgBottom: COLORS.sandDark, difficulty: 1.0, pool: ['bug', 'crab'], bossName: '왕집게게', bossTex: 'boss_kingcrab', bossHp: 650, bossDmg: 20, bossRadius: 46, reward: 60 },
-  { name: '울창한 정글섬', bgTop: COLORS.ocean, bgBottom: COLORS.jungle, difficulty: 1.35, pool: ['crab', 'boar', 'bug'], bossName: '성난 멧돼지 왕', bossTex: 'boss_boarking', bossHp: 1050, bossDmg: 24, bossRadius: 50, reward: 95 },
-  { name: '산호초 여울', bgTop: COLORS.ocean, bgBottom: COLORS.reef, difficulty: 1.7, pool: ['crab', 'jelly', 'boar'], bossName: '문어대왕', bossTex: 'boss_octopus', bossHp: 1550, bossDmg: 28, bossRadius: 52, reward: 135 },
-  { name: '저주받은 해적 바다', bgTop: COLORS.oceanDark, bgBottom: COLORS.pirate, difficulty: 2.05, pool: ['ghost', 'pirate', 'jelly'], bossName: '저주받은 해적 선장', bossTex: 'boss_captain', bossHp: 2200, bossDmg: 32, bossRadius: 54, reward: 185 },
-  { name: '짙은 늪지 섬', bgTop: COLORS.oceanDark, bgBottom: COLORS.swamp, difficulty: 2.4, pool: ['boar', 'jelly', 'eel'], bossName: '심해 대왕뱀', bossTex: 'boss_serpent', bossHp: 2900, bossDmg: 36, bossRadius: 56, reward: 250 },
-  { name: '유령 안개해', bgTop: COLORS.abyss, bgBottom: COLORS.pirate, difficulty: 2.75, pool: ['ghost', 'eel', 'skeleton'], bossName: '유령 군주', bossTex: 'boss_lich', bossHp: 3600, bossDmg: 40, bossRadius: 56, reward: 330 },
-  { name: '해골 해적항', bgTop: COLORS.oceanDark, bgBottom: COLORS.sunset, difficulty: 3.1, pool: ['pirate', 'skeleton', 'boar'], bossName: '심연의 왕집게게', bossTex: 'boss_kingcrab', bossHp: 4400, bossDmg: 44, bossRadius: 58, reward: 430 },
-  { name: '끓는 화산섬', bgTop: COLORS.oceanDark, bgBottom: COLORS.volcano, difficulty: 3.45, pool: ['skeleton', 'eel', 'pirate'], bossName: '분노한 멧돼지 왕', bossTex: 'boss_boarking', bossHp: 5300, bossDmg: 48, bossRadius: 60, reward: 540 },
-  { name: '심해 협곡', bgTop: COLORS.abyss, bgBottom: COLORS.reef, difficulty: 3.8, pool: ['jelly', 'eel', 'skeleton', 'ghost'], bossName: '심연의 문어', bossTex: 'boss_octopus', bossHp: 6300, bossDmg: 52, bossRadius: 60, reward: 670 },
-  { name: '빙하 무덤', bgTop: COLORS.arctic, bgBottom: COLORS.abyss, difficulty: 4.2, pool: ['skeleton', 'ghost', 'pirate', 'boar'], bossName: '유령 해적 선장', bossTex: 'boss_captain', bossHp: 7400, bossDmg: 56, bossRadius: 62, reward: 820 },
-  { name: '저주받은 심연', bgTop: COLORS.abyss, bgBottom: COLORS.volcano, difficulty: 4.6, pool: ['eel', 'skeleton', 'ghost', 'pirate'], bossName: '각성한 대왕뱀', bossTex: 'boss_serpent', bossHp: 8700, bossDmg: 62, bossRadius: 64, reward: 1000 },
-  { name: '세상의 끝', bgTop: COLORS.abyss, bgBottom: COLORS.sunset, difficulty: 5.2, pool: ['skeleton', 'ghost', 'pirate', 'eel', 'boar'], bossName: '태초의 유령 군주', bossTex: 'boss_lich', bossHp: 10500, bossDmg: 70, bossRadius: 66, reward: 1300 },
+export const ISLAND_THEMES: IslandTheme[] = [
+  { name: '모래 해변', vehicle: '뗏목', bgTop: COLORS.ocean, bgBottom: COLORS.sandDark, baseDiff: 1.0, enemyPool: ['bug', 'crab', 'bat'], bossPool: ['boss_kingcrab', 'boss_boarking'] },
+  { name: '울창한 정글', vehicle: '나룻배', bgTop: COLORS.ocean, bgBottom: COLORS.jungle, baseDiff: 1.5, enemyPool: ['crab', 'boar', 'slug', 'bat'], bossPool: ['boss_boarking', 'boss_golem'] },
+  { name: '산호초 바다', vehicle: '카누', bgTop: COLORS.ocean, bgBottom: COLORS.reef, baseDiff: 2.1, enemyPool: ['jelly', 'eel', 'shark', 'crab'], bossPool: ['boss_octopus', 'boss_shark'] },
+  { name: '저주받은 해적항', vehicle: '범선', bgTop: COLORS.oceanDark, bgBottom: COLORS.pirate, baseDiff: 2.8, enemyPool: ['pirate', 'skeleton', 'ghost', 'bat'], bossPool: ['boss_captain', 'boss_lich'] },
+  { name: '독기의 늪', vehicle: '증기선', bgTop: COLORS.oceanDark, bgBottom: COLORS.swamp, baseDiff: 3.5, enemyPool: ['slug', 'ghost', 'eel', 'jelly'], bossPool: ['boss_serpent', 'boss_lich'] },
+  { name: '끓는 화산지대', vehicle: '쾌속정', bgTop: COLORS.oceanDark, bgBottom: COLORS.volcano, baseDiff: 4.3, enemyPool: ['golem', 'skeleton', 'boar', 'shark'], bossPool: ['boss_golem', 'boss_boarking'] },
+  { name: '얼어붙은 심해', vehicle: '잠수함', bgTop: COLORS.arctic, bgBottom: COLORS.abyss, baseDiff: 5.2, enemyPool: ['shark', 'eel', 'ghost', 'skeleton'], bossPool: ['boss_octopus', 'boss_shark', 'boss_serpent'] },
+  { name: '세상의 끝', vehicle: '전설의 방주', bgTop: COLORS.abyss, bgBottom: COLORS.sunset, baseDiff: 6.4, enemyPool: ['skeleton', 'ghost', 'golem', 'pirate', 'bat'], bossPool: ['boss_lich', 'boss_golem', 'boss_captain'] },
 ];
 
-export const ISLANDS: IslandDef[] = ISLAND_SPECS.map((s, id) => {
-  const pool = s.pool;
-  const lead = pool.length > 1 ? pool.slice(0, pool.length - 1) : pool;
-  const iv = (n: number) => Math.max(240, n - id * 6); // 뒤 섬일수록 스폰 빨라짐
-  return {
-    id,
-    name: s.name,
-    vehicle: VEHICLE_CHAIN[id] ?? '방주',
-    bgTop: s.bgTop,
-    bgBottom: s.bgBottom,
-    difficulty: s.difficulty,
-    waves: [
-      wave(lead, 16 + id, iv(520)),
-      wave(pool, 22 + id, iv(460)),
-      wave(pool, 26 + id, iv(410)),
-      wave(pool, 32 + id, iv(360)),
-    ],
-    boss: { id: s.bossTex, name: s.bossName, color: COLORS.boss, texture: s.bossTex, hp: s.bossHp, speed: 48, damage: s.bossDmg, xp: 0, radius: s.bossRadius, gold: 0 },
-    reward: s.reward,
-  };
-});
+export const ISLAND_COUNT = ISLAND_THEMES.length;
+export const RUNS_PER_ISLAND = 12;
 
-// 다음 섬으로 갈 때 진화하는 탈것 이름
+export const VEHICLE_CHAIN = ISLAND_THEMES.map((t) => t.vehicle);
 export const NEXT_VEHICLE = VEHICLE_CHAIN.slice(1);
+
+const BOSS_NAMES: Record<string, string> = {
+  boss_kingcrab: '왕집게게',
+  boss_boarking: '멧돼지 왕',
+  boss_octopus: '문어대왕',
+  boss_captain: '해적 선장',
+  boss_serpent: '대왕뱀',
+  boss_lich: '유령 군주',
+  boss_golem: '거대 골렘',
+  boss_shark: '메가 상어',
+};
+const BOSS_RADIUS: Record<string, number> = {
+  boss_kingcrab: 46,
+  boss_boarking: 50,
+  boss_octopus: 52,
+  boss_captain: 54,
+  boss_serpent: 56,
+  boss_lich: 54,
+  boss_golem: 56,
+  boss_shark: 58,
+};
+
+// 한 판(run) 절차 생성: (섬, 판번호) → 스테이지들 + 보스
+export function getRun(islandIndex: number, runIndex: number): IslandDef {
+  const t = ISLAND_THEMES[Math.min(Math.max(islandIndex, 0), ISLAND_THEMES.length - 1)];
+  const difficulty = t.baseDiff + runIndex * 0.1 + islandIndex * 0.05;
+
+  const stageCount = 3 + (runIndex % 4); // 3~6 스테이지
+  const pool = t.enemyPool;
+  const stages: WaveDef[] = [];
+  for (let s = 0; s < stageCount; s++) {
+    const count = 14 + runIndex + s * 5;
+    const interval = Math.max(240, 520 - runIndex * 8 - s * 20);
+    const stagePool = s === 0 && pool.length > 1 ? pool.slice(0, pool.length - 1) : pool;
+    stages.push(wave(stagePool, count, interval));
+  }
+
+  const bossTex = t.bossPool[runIndex % t.bossPool.length];
+  const bossHp = Math.round(500 + islandIndex * 820 + runIndex * 240);
+  const bossDmg = Math.round(16 + islandIndex * 6 + runIndex * 1.4);
+  const bossRadius = Math.min(70, (BOSS_RADIUS[bossTex] ?? 52) + Math.min(islandIndex * 1.5, 12));
+
+  return {
+    id: islandIndex * 100 + runIndex,
+    islandIndex,
+    runIndex,
+    name: `${t.name} · ${runIndex + 1}판`,
+    vehicle: t.vehicle,
+    bgTop: t.bgTop,
+    bgBottom: t.bgBottom,
+    difficulty,
+    waves: stages,
+    boss: { id: bossTex, name: BOSS_NAMES[bossTex] ?? '보스', color: COLORS.boss, texture: bossTex, hp: bossHp, speed: 48, damage: bossDmg, xp: 0, radius: bossRadius, gold: 0 },
+    reward: Math.round(40 + islandIndex * 55 + runIndex * 18),
+  };
+}

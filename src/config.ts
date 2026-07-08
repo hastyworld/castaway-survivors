@@ -100,14 +100,17 @@ export interface WaveDef {
   interval: number; // 스폰 간격(ms)
 }
 
+// IslandDef = 한 '판(run)' 설정. waves = 그 판의 스테이지들(전멸→다음).
 export interface IslandDef {
   id: number;
+  islandIndex: number; // 몇 번째 섬
+  runIndex: number; // 섬 안 몇 번째 판
   name: string;
-  vehicle: string; // 탈출 탈것 (기획안 2번: 뗏목→나룻배→범선)
+  vehicle: string;
   bgTop: number;
   bgBottom: number;
   difficulty: number; // 적 능력치 배수
-  waves: WaveDef[];
+  waves: WaveDef[]; // 스테이지들
   boss: EnemyDef;
   reward: number; // 클리어 골드
 }

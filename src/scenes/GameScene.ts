@@ -29,8 +29,8 @@ import LevelUp, { UpgradeOption } from '../ui/LevelUp';
 import { makeButton } from '../ui/Button';
 import Fx from '../systems/Fx';
 import { Sfx } from '../systems/Sfx';
-import { ISLANDS, WEAPONS, PASSIVES, ENEMIES } from '../content';
-import { addGold, markCleared } from '../save';
+import { getRun, WEAPONS, PASSIVES, ENEMIES } from '../content';
+import { addGold, markRunCleared } from '../save';
 
 type State = 'playing' | 'over';
 
@@ -93,8 +93,8 @@ export default class GameScene extends Phaser.Scene {
     super('Game');
   }
 
-  init(data: { islandId: number }): void {
-    this.island = ISLANDS[data.islandId] ?? ISLANDS[0];
+  init(data: { island: number; run: number }): void {
+    this.island = getRun(data.island ?? 0, data.run ?? 0);
     // 상태 초기화 (scene 재사용 대비)
     this.state = 'playing';
     this.paused = false;
@@ -757,7 +757,7 @@ export default class GameScene extends Phaser.Scene {
     this.state = 'over';
     Sfx.victory();
     const earned = this.island.reward + this.runGold;
-    markCleared(this.island.id);
+    markRunCleared(this.island.islandIndex, this.island.runIndex);
     addGold(earned);
     this.finish(true, earned);
   }
@@ -776,7 +776,9 @@ export default class GameScene extends Phaser.Scene {
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.start('Result', {
         victory,
-        islandId: this.island.id,
+        island: this.island.islandIndex,
+        run: this.island.runIndex,
+        runName: this.island.name,
         kills: this.kills,
         timeMs: this.elapsed,
         goldEarned,

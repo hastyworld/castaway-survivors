@@ -3,7 +3,10 @@
 // 판 밖 영구 성장(②) + 진행도 + 탈것 진화 상태를 보관합니다.
 // 기획안 5번: 성장은 3겹으로 분리. 여기 저장되는 건 ②(영구)와 ③(탈것).
 // ============================================================
-import { VEHICLE_CHAIN } from './content';
+import { VEHICLE_CHAIN, ISLAND_COUNT, RUNS_PER_ISLAND } from './content';
+
+// 다음 섬을 열려면 현재 섬에서 이만큼 판을 깨야 함
+const UNLOCK_THRESHOLD = 8;
 
 const KEY = 'castaway_survivors_save_v1';
 
@@ -27,14 +30,14 @@ export const PERM_UPGRADES: PermUpgrade[] = [
 
 export interface SaveData {
   gold: number;
-  clearedIslands: number[]; // 클리어한 섬 id 목록
+  runsCleared: Record<number, number>; // 섬index → 클리어한 판 수 (0..RUNS_PER_ISLAND)
   perm: Record<PermId, number>; // 영구 특성 레벨
 }
 
 function fresh(): SaveData {
   return {
     gold: 0,
-    clearedIslands: [],
+    runsCleared: {},
     perm: { maxhp: 0, power: 0, speed: 0, magnet: 0 },
   };
 }
@@ -51,7 +54,7 @@ export function load(): SaveData {
         ...fresh(),
         ...parsed,
         perm: { ...fresh().perm, ...(parsed.perm ?? {}) },
-        clearedIslands: parsed.clearedIslands ?? [],
+        runsCleared: parsed.runsCleared ?? {},
       };
       return cache;
     }
@@ -77,24 +80,41 @@ export function addGold(amount: number): void {
   save(d);
 }
 
-export function markCleared(islandId: number): void {
+// 판 클리어 기록: 그 판 인덱스 +1 만큼 진행됨
+export function markRunCleared(island: number, run: number): void {
   const d = load();
-  if (!d.clearedIslands.includes(islandId)) {
-    d.clearedIslands.push(islandId);
+  const cur = d.runsCleared[island] ?? 0;
+  if (run + 1 > cur) {
+    d.runsCleared[island] = Math.min(RUNS_PER_ISLAND, run + 1);
     save(d);
   }
 }
 
-// 섬 해금 여부: 0번은 항상 열림, 그 외엔 직전 섬을 깨야 열림
-export function isIslandUnlocked(islandId: number): boolean {
-  if (islandId <= 0) return true;
-  return load().clearedIslands.includes(islandId - 1);
+export function runsClearedIn(island: number): number {
+  return load().runsCleared[island] ?? 0;
 }
 
-// 현재 탈것(진화 상징 ③): 깬 섬 수에 따라
+// 섬 해금: 0번 항상, 그 외엔 직전 섬에서 UNLOCK_THRESHOLD 판 클리어
+export function isIslandUnlocked(island: number): boolean {
+  if (island <= 0) return true;
+  return runsClearedIn(island - 1) >= UNLOCK_THRESHOLD;
+}
+
+// 판 해금: 섬이 열려있고, 이전 판까지 깼으면
+export function isRunUnlocked(island: number, run: number): boolean {
+  if (!isIslandUnlocked(island)) return false;
+  return run <= runsClearedIn(island);
+}
+
+export function highestUnlockedIsland(): number {
+  let h = 0;
+  for (let i = 1; i < ISLAND_COUNT; i++) if (isIslandUnlocked(i)) h = i;
+  return h;
+}
+
+// 현재 탈것(진화 상징 ③): 해금한 최고 섬 기준
 export function currentVehicle(): string {
-  const n = load().clearedIslands.length;
-  return VEHICLE_CHAIN[Math.min(n, VEHICLE_CHAIN.length - 1)];
+  return VEHICLE_CHAIN[Math.min(highestUnlockedIsland(), VEHICLE_CHAIN.length - 1)];
 }
 
 export function permCost(u: PermUpgrade, level: number): number {

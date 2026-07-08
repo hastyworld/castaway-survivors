@@ -396,6 +396,111 @@ export function generateArt(scene: Phaser.Scene): void {
   crown(g, 32, 8, 22);
   tex('boss_lich');
 
+  // ---------- 적: 박쥐 ----------
+  g.fillStyle(0x4a3f5c, 1);
+  g.fillTriangle(6, 22, 26, 20, 22, 40);
+  g.fillTriangle(58, 22, 38, 20, 42, 40);
+  g.fillStyle(0x3a3048, 1);
+  g.fillEllipse(32, 33, 20, 22);
+  g.fillStyle(0x2a2238, 1);
+  g.fillTriangle(24, 20, 27, 9, 31, 22);
+  g.fillTriangle(40, 20, 37, 9, 33, 22);
+  eyes(g, 32, 5, 30, 3, 1.5, true);
+  g.fillStyle(WHITE, 1);
+  g.fillTriangle(28, 42, 30, 48, 32, 42);
+  g.fillTriangle(32, 42, 34, 48, 36, 42);
+  tex('enemy_bat');
+
+  // ---------- 적: 민달팽이 ----------
+  g.fillStyle(0x6cbf5a, 1);
+  g.fillEllipse(28, 44, 44, 18);
+  g.fillStyle(0x5aa84a, 1);
+  g.fillEllipse(22, 42, 26, 14);
+  g.fillStyle(0xd98b4a, 1);
+  g.fillCircle(40, 34, 14);
+  g.fillStyle(0xb56b32, 1);
+  g.fillCircle(40, 34, 9);
+  g.fillCircle(40, 34, 4);
+  g.lineStyle(2.5, 0x6cbf5a, 1);
+  g.lineBetween(17, 38, 15, 24);
+  g.lineBetween(24, 36, 24, 22);
+  g.fillStyle(WHITE, 1);
+  g.fillCircle(15, 23, 3);
+  g.fillCircle(24, 21, 3);
+  g.fillStyle(DARK, 1);
+  g.fillCircle(15, 23, 1.5);
+  g.fillCircle(24, 21, 1.5);
+  tex('enemy_slug');
+
+  // ---------- 적: 바위 골렘 ----------
+  g.fillStyle(0x7d7a72, 1);
+  g.fillRoundedRect(18, 26, 28, 30, 5);
+  g.fillStyle(0x8f8c84, 1);
+  g.fillRoundedRect(21, 19, 18, 15, 4);
+  g.fillStyle(0x6a675f, 1);
+  g.fillRoundedRect(11, 30, 11, 14, 3);
+  g.fillRoundedRect(42, 30, 11, 14, 3);
+  g.fillStyle(0x00e5ff, 1);
+  g.fillCircle(26, 26, 3);
+  g.fillCircle(34, 26, 3);
+  g.fillStyle(0x5a574f, 1);
+  g.fillRect(24, 40, 16, 2);
+  g.fillRect(30, 44, 10, 2);
+  tex('enemy_golem');
+
+  // ---------- 적: 상어 ----------
+  g.fillStyle(0x6b7d8a, 1);
+  g.fillEllipse(30, 34, 44, 22);
+  g.fillStyle(0x9aaab6, 1);
+  g.fillEllipse(28, 40, 34, 10);
+  g.fillStyle(0x556673, 1);
+  g.fillTriangle(26, 22, 36, 22, 31, 8);
+  g.fillTriangle(50, 28, 63, 20, 58, 40);
+  g.fillStyle(WHITE, 1);
+  g.fillTriangle(9, 34, 15, 32, 15, 38);
+  g.fillTriangle(9, 38, 15, 36, 14, 42);
+  g.fillStyle(WHITE, 1);
+  g.fillCircle(19, 30, 3);
+  g.fillStyle(DARK, 1);
+  g.fillCircle(19, 30, 1.5);
+  tex('enemy_shark');
+
+  // ---------- 보스: 거대 골렘 ----------
+  g.fillStyle(0x6a675f, 1);
+  g.fillRoundedRect(13, 28, 38, 34, 6);
+  g.fillStyle(0x7d7a72, 1);
+  g.fillRoundedRect(20, 17, 24, 19, 5);
+  g.fillStyle(0x565349, 1);
+  g.fillRoundedRect(6, 32, 12, 18, 4);
+  g.fillRoundedRect(46, 32, 12, 18, 4);
+  g.fillStyle(0xff5a5a, 1);
+  g.fillCircle(27, 26, 4);
+  g.fillCircle(37, 26, 4);
+  g.fillStyle(DARK, 1);
+  g.fillCircle(27, 26, 1.8);
+  g.fillCircle(37, 26, 1.8);
+  g.fillStyle(0x4a473f, 1);
+  g.fillRect(22, 44, 20, 3);
+  crown(g, 32, 9, 22);
+  tex('boss_golem');
+
+  // ---------- 보스: 메가 상어 ----------
+  g.fillStyle(0x556673, 1);
+  g.fillEllipse(30, 34, 50, 28);
+  g.fillStyle(0x7a8b98, 1);
+  g.fillEllipse(30, 41, 40, 12);
+  g.fillStyle(0x3f4f5b, 1);
+  g.fillTriangle(25, 20, 39, 20, 32, 3);
+  g.fillTriangle(52, 26, 64, 15, 60, 44);
+  g.fillStyle(WHITE, 1);
+  for (let i = 0; i < 5; i++) g.fillTriangle(8 + i * 5, 40, 11 + i * 5, 47, 14 + i * 5, 40);
+  g.fillStyle(0xff5a5a, 1);
+  g.fillCircle(21, 29, 4);
+  g.fillStyle(DARK, 1);
+  g.fillCircle(21, 29, 1.8);
+  crown(g, 32, 6, 20);
+  tex('boss_shark');
+
   // ---------- 투사체: 야자열매 ----------
   g.fillStyle(0x6b4a2b, 1);
   g.fillCircle(32, 32, 22);

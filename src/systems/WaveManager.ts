@@ -34,7 +34,7 @@ export default class WaveManager {
   label(): string {
     if (this.phase === 'boss') return '⚠ 보스전';
     if (this.phase === 'done') return '클리어!';
-    return `웨이브 ${this.waveIndex + 1} / ${this.totalWaves}`;
+    return `스테이지 ${this.waveIndex + 1} / ${this.totalWaves}`;
   }
 
   update(delta: number): void {

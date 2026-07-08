@@ -7,6 +7,7 @@ import BootScene from './scenes/BootScene';
 import TitleScene from './scenes/TitleScene';
 import ShopScene from './scenes/ShopScene';
 import MapScene from './scenes/MapScene';
+import RunSelectScene from './scenes/RunSelectScene';
 import GameScene from './scenes/GameScene';
 import ResultScene from './scenes/ResultScene';
 
@@ -25,7 +26,7 @@ const config: Phaser.Types.Core.GameConfig = {
     arcade: { debug: false },
   },
   render: { antialias: true, roundPixels: false },
-  scene: [BootScene, TitleScene, ShopScene, MapScene, GameScene, ResultScene],
+  scene: [BootScene, TitleScene, ShopScene, MapScene, RunSelectScene, GameScene, ResultScene],
 };
 
 // HMR(코드 저장 시 자동 새로고침) 대비: 기존 게임 인스턴스가 있으면 정리
