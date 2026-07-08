@@ -1,8 +1,10 @@
 // ============================================================
-// Button.ts — 메뉴 공용 버튼 헬퍼
+// Button.ts — 메뉴 공용 버튼 (둥근 패널 + Zone 히트영역)
+// ⚠ NineSlice 는 기본 히트영역이 원본 텍스처(작음)라 입력이 안 먹음 →
+//   보이는 건 nineslice, 입력은 정확한 크기의 투명 Zone 으로 처리.
 // ============================================================
 import Phaser from 'phaser';
-import { CSS, FONT, COLORS } from '../config';
+import { FONT, COLORS } from '../config';
 import { Sfx } from '../systems/Sfx';
 
 export interface ButtonOpts {
@@ -28,8 +30,8 @@ export function makeButton(
   const disabled = opts.disabled ?? false;
 
   const c = scene.add.container(x, y);
-  const bg = scene.add.rectangle(0, 0, w, h, disabled ? 0x2a3a48 : fill, 1).setStrokeStyle(2, 0x000000, 0.15);
-  bg.setInteractive({ useHandCursor: !disabled });
+  const shadow = scene.add.nineslice(0, 4, 'panel', undefined, w, h, 16, 16, 16, 16).setTint(0x000000).setAlpha(0.22);
+  const bg = scene.add.nineslice(0, 0, 'panel', undefined, w, h, 16, 16, 16, 16).setTint(disabled ? 0x2a3a48 : fill);
   const txt = scene.add
     .text(0, 0, label, {
       fontFamily: FONT,
@@ -38,19 +40,22 @@ export function makeButton(
       fontStyle: 'bold',
     })
     .setOrigin(0.5);
-  c.add([bg, txt]);
+  const hit = scene.add.zone(0, 0, w, h);
+  c.add([shadow, bg, txt, hit]);
 
   if (!disabled) {
-    bg.on('pointerover', () => scene.tweens.add({ targets: c, scale: 1.04, duration: 90 }));
-    bg.on('pointerout', () => scene.tweens.add({ targets: c, scale: 1, duration: 90 }));
-    bg.on('pointerdown', () => c.setScale(0.97));
-    bg.on('pointerup', () => {
+    hit.setInteractive({ useHandCursor: true });
+    hit.on('pointerover', () => scene.tweens.add({ targets: c, scale: 1.04, duration: 90 }));
+    hit.on('pointerout', () => scene.tweens.add({ targets: c, scale: 1, duration: 90 }));
+    hit.on('pointerdown', () => c.setScale(0.97));
+    hit.on('pointerup', () => {
       c.setScale(1);
       Sfx.click();
       onClick();
     });
   }
   c.setData('bg', bg);
+  c.setData('hit', hit);
   c.setData('txt', txt);
   return c;
 }

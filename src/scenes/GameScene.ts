@@ -716,7 +716,7 @@ export default class GameScene extends Phaser.Scene {
     const muteLabel = () => (Sfx.muted ? '소리 켜기' : '소리 끄기');
     const resume = makeButton(this, GAME_WIDTH / 2, GAME_HEIGHT - 210, '▶  계속하기', () => this.closePause(), { width: 260, height: 62, fontSize: 22 });
     const muteBtn = makeButton(this, GAME_WIDTH / 2, GAME_HEIGHT - 138, muteLabel(), () => {}, { width: 200, height: 48, fill: COLORS.panelBorder, textColor: '#ffffff', fontSize: 16 });
-    (muteBtn.getData('bg') as Phaser.GameObjects.Rectangle).on('pointerup', () => {
+    (muteBtn.getData('hit') as Phaser.GameObjects.Zone).on('pointerup', () => {
       Sfx.toggleMute();
       (muteBtn.getData('txt') as Phaser.GameObjects.Text).setText(muteLabel());
     });

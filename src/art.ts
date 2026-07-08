@@ -575,5 +575,11 @@ export function generateArt(scene: Phaser.Scene): void {
   g.fillCircle(40, 36, 7);
   tex('bush');
 
+  // ---------- UI: 둥근 패널 (버튼/카드용, 나인슬라이스로 tint해서 사용) ----------
+  g.fillStyle(0xffffff, 1);
+  g.fillRoundedRect(0, 0, 48, 48, 16);
+  g.generateTexture('panel', 48, 48);
+  g.clear();
+
   g.destroy();
 }
