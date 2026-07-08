@@ -29,10 +29,10 @@ export default class Enemy extends Phaser.Physics.Arcade.Image {
   // 풀에서 꺼내 쓰거나 새로 만들 때 값 세팅
   spawn(def: EnemyDef, diff: number, x: number, y: number, isBoss = false): void {
     this.isBoss = isBoss;
-    // 보스는 더 단단하고(체력×1.6) 아프게(피해×1.15) — 스킬은 BossAI 담당
-    this.hp = this.maxHp = Math.round(def.hp * (isBoss ? 1.6 : diff));
+    // 보스는 더 단단하고(체력×1.9) 아프게(피해×1.3) — 스킬은 BossAI 담당
+    this.hp = this.maxHp = Math.round(def.hp * (isBoss ? 1.9 : diff));
     this.speed = def.speed * (isBoss ? 1 : Math.min(diff, 1.4));
-    this.contactDamage = Math.round(def.damage * (isBoss ? 1.15 : diff));
+    this.contactDamage = Math.round(def.damage * (isBoss ? 1.3 : diff));
     this.xpValue = def.xp;
     this.goldValue = def.gold ?? 0;
 

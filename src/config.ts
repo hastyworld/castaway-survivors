@@ -10,8 +10,12 @@ export const GAME_HEIGHT = 960;
 // HUD(상단 정보바) 높이 — 이 아래가 실제 플레이 영역
 export const HUD_HEIGHT = 96;
 
-// 하단 조작 세이프존 높이 — 엄지가 쉬는 곳. 캐릭터는 이 위로만 다님(손가락에 안 가리게)
+// 하단 조작 세이프존 높이 (구 고정아레나용; 스크롤 월드에선 미사용이지만 상수 유지)
 export const BOTTOM_MARGIN = 150;
+
+// 스크롤 월드 크기 — 화면보다 훨씬 넓은 무인도. 카메라가 플레이어를 따라감.
+export const WORLD_W = 2000;
+export const WORLD_H = 2000;
 
 // 색상 팔레트 (무인도/바다 톤). 하드코딩 대신 여기서 가져다 씁니다.
 export const COLORS = {

@@ -32,6 +32,24 @@ class SfxManager {
       window.addEventListener('pointerdown', unlock);
       window.addEventListener('keydown', unlock);
     }
+    // 앱을 끄거나 백그라운드로 보내면 소리 즉시 정지 (요청 1)
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => this.onVisibility());
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pagehide', () => this.suspend());
+      window.addEventListener('blur', () => this.onVisibility());
+    }
+  }
+
+  private onVisibility(): void {
+    if (typeof document !== 'undefined' && document.hidden) this.suspend();
+    else if (!this.muted) this.resume();
+  }
+
+  // 오디오 컨텍스트 정지 (모든 소리·BGM 멈춤)
+  suspend(): void {
+    if (this.ctx && this.ctx.state === 'running') this.ctx.suspend().catch(() => {});
   }
 
   private ensure(): AudioContext | null {

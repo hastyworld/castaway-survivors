@@ -8,19 +8,19 @@ import type GameScene from '../scenes/GameScene';
 import Enemy from '../entities/Enemy';
 import { Sfx } from './Sfx';
 
-type Ability = 'charge' | 'shoot' | 'summon' | 'aoe';
+type Ability = 'charge' | 'shoot' | 'summon' | 'aoe' | 'ring';
 
-// 보스별 스킬 세트
+// 보스별 스킬 세트 (3~4개)
 const CONFIGS: Record<string, Ability[]> = {
-  boss_kingcrab: ['summon', 'shoot'],
-  boss_boarking: ['charge', 'summon'],
-  boss_octopus: ['shoot', 'aoe'],
-  boss_captain: ['shoot', 'summon'],
-  boss_serpent: ['charge', 'shoot'],
-  boss_lich: ['summon', 'aoe', 'shoot'],
+  boss_kingcrab: ['summon', 'shoot', 'ring'],
+  boss_boarking: ['charge', 'summon', 'shoot'],
+  boss_octopus: ['shoot', 'aoe', 'ring'],
+  boss_captain: ['shoot', 'summon', 'aoe'],
+  boss_serpent: ['charge', 'shoot', 'ring'],
+  boss_lich: ['summon', 'aoe', 'ring', 'shoot'],
 };
 
-const BASE_CD: Record<Ability, number> = { charge: 4200, shoot: 2600, summon: 6800, aoe: 5200 };
+const BASE_CD: Record<Ability, number> = { charge: 3400, shoot: 2000, summon: 5600, aoe: 4200, ring: 3600 };
 
 export default class BossAI {
   private scene: GameScene;
@@ -38,16 +38,29 @@ export default class BossAI {
   private aoeY = 0;
   private aoeR = 96;
 
+  private maxHp: number;
+  private enraged = false;
+
   constructor(scene: GameScene, boss: Enemy) {
     this.scene = scene;
     this.boss = boss;
+    this.maxHp = boss.maxHp;
     this.abilities = CONFIGS[boss.texture.key] ?? ['shoot'];
-    // 초기 쿨다운은 살짝 늦게(등장 직후 2초쯤 첫 스킬)
-    this.cd = { charge: 2600, shoot: 1800, summon: 3400, aoe: 3000 };
+    // 초기 쿨다운(등장 직후 ~2초에 첫 스킬)
+    this.cd = { charge: 2400, shoot: 1500, summon: 3000, aoe: 2800, ring: 2600 };
   }
 
   update(delta: number): void {
     if (!this.boss.active) return;
+
+    // 분노 페이즈: 체력 35% 이하면 쿨다운 대폭 단축 + 알림
+    if (!this.enraged && this.boss.hp <= this.maxHp * 0.35) {
+      this.enraged = true;
+      this.scene.announce('⚠ 보스 분노!');
+      this.scene.cameras.main.shake(400, 0.01);
+      Sfx.boss();
+    }
+
     if (this.action === 'charge') return this.updateCharge(delta);
     if (this.action === 'aoe') return this.updateAoe(delta);
 
@@ -58,7 +71,7 @@ export default class BossAI {
       if (this.cd[ab] <= 0 && !ready) ready = ab;
     }
     if (ready) {
-      this.cd[ready] = BASE_CD[ready];
+      this.cd[ready] = BASE_CD[ready] * (this.enraged ? 0.55 : 1);
       this.trigger(ready);
     }
   }
@@ -68,6 +81,18 @@ export default class BossAI {
     else if (ab === 'shoot') this.shoot();
     else if (ab === 'summon') this.summon();
     else if (ab === 'aoe') this.startAoe();
+    else if (ab === 'ring') this.ring();
+  }
+
+  // 사방으로 투사체 난사
+  private ring(): void {
+    const b = this.boss;
+    const dmg = Math.max(6, Math.round(b.contactDamage * 0.5));
+    const n = this.enraged ? 14 : 10;
+    const off = Math.random() * Math.PI;
+    for (let i = 0; i < n; i++) {
+      this.scene.spawnEnemyProjectile(b.x, b.y, off + (i * Math.PI * 2) / n, 210, dmg);
+    }
   }
 
   // ---- 돌진 ----

@@ -10,7 +10,8 @@ import {
   GAME_WIDTH,
   GAME_HEIGHT,
   HUD_HEIGHT,
-  BOTTOM_MARGIN,
+  WORLD_W,
+  WORLD_H,
   EnemyDef,
   IslandDef,
   PassiveId,
@@ -110,72 +111,40 @@ export default class GameScene extends Phaser.Scene {
   }
 
   create(): void {
-    // 배경(아레나): 위=바다, 아래=섬 바닥
-    drawGradient(this, this.island.bgTop, this.island.bgBottom);
-    this.add.ellipse(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 60, GAME_WIDTH * 1.3, GAME_HEIGHT * 0.9, 0xffffff, 0.04).setDepth(-90);
+    // ---- 스크롤 월드: 화면보다 훨씬 넓은 무인도, 카메라가 플레이어를 따라감 (요청 2) ----
+    this.physics.world.setBounds(0, 0, WORLD_W, WORLD_H);
+    this.cameras.main.setBounds(0, 0, WORLD_W, WORLD_H);
 
-    // 배경 분위기: 천천히 떠오르는 물방울
-    this.add
-      .particles(0, 0, 'spark', {
-        x: { min: 0, max: GAME_WIDTH },
-        y: GAME_HEIGHT + 10,
-        lifespan: 6000,
-        speedY: { min: -40, max: -18 },
-        speedX: { min: -8, max: 8 },
-        scale: { start: 0.25, end: 0.5 },
-        alpha: { start: 0.18, end: 0 },
-        frequency: 420,
-        tint: 0x8fd3ff,
-        blendMode: 'ADD',
-      })
-      .setDepth(-80);
+    // 화면 고정 하늘/바다 그라데이션
+    drawGradient(this, this.island.bgTop, this.island.bgBottom).setScrollFactor(0);
 
-    // 모래섬 바닥
-    this.add.ellipse(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 40, GAME_WIDTH * 1.25, GAME_HEIGHT * 0.72, COLORS.sand, 0.1).setDepth(-88);
-    this.add.ellipse(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 40, GAME_WIDTH * 0.95, GAME_HEIGHT * 0.55, COLORS.sand, 0.1).setDepth(-87);
-
-    // 배경 소품 (야자수/바위/수풀) — 섬마다 다르게
-    const propSets: Record<number, string[]> = {
-      0: ['palm', 'rock', 'bush', 'rock', 'palm', 'bush'],
-      1: ['palm', 'bush', 'palm', 'bush', 'rock', 'bush'],
-      2: ['rock', 'rock', 'palm', 'rock', 'bush', 'rock'],
-    };
-    const props = propSets[this.island.id] ?? propSets[0];
-    const pb = GAME_HEIGHT - BOTTOM_MARGIN;
-    const spots = [
-      [48, HUD_HEIGHT + 64],
-      [GAME_WIDTH - 50, HUD_HEIGHT + 84],
-      [72, pb - 50],
-      [GAME_WIDTH - 66, pb - 30],
-      [GAME_WIDTH / 2 + 40, HUD_HEIGHT + 48],
-      [GAME_WIDTH - 96, (HUD_HEIGHT + pb) / 2],
-    ];
-    props.forEach((key, i) => {
-      const [sx, sy] = spots[i % spots.length];
+    // 월드 지면(섬 바닥) — 스크롤됨
+    this.add.rectangle(0, 0, WORLD_W, WORLD_H, this.island.bgBottom, 0.5).setOrigin(0, 0).setDepth(-95);
+    // 지면 질감 패치 (밝은 모래 / 어두운 수풀)
+    for (let i = 0; i < 70; i++) {
+      const light = i % 2 === 0;
       this.add
-        .image(sx + Phaser.Math.Between(-14, 14), sy + Phaser.Math.Between(-10, 10), key)
+        .ellipse(
+          Phaser.Math.Between(0, WORLD_W),
+          Phaser.Math.Between(0, WORLD_H),
+          Phaser.Math.Between(90, 280),
+          Phaser.Math.Between(70, 200),
+          light ? COLORS.sand : 0x152015,
+          0.06
+        )
+        .setDepth(-92);
+    }
+
+    // 월드 곳곳에 소품(야자수/바위/수풀) — 이동하며 지나감
+    const propKeys = ['palm', 'rock', 'bush', 'palm', 'bush', 'rock'];
+    for (let i = 0; i < 48; i++) {
+      const key = propKeys[Phaser.Math.Between(0, propKeys.length - 1)];
+      this.add
+        .image(Phaser.Math.Between(50, WORLD_W - 50), Phaser.Math.Between(50, WORLD_H - 50), key)
         .setDepth(-70)
-        .setAlpha(0.92)
-        .setScale(Phaser.Math.FloatBetween(0.7, 1.1));
-    });
-
-    // 플레이 영역: HUD 아래 ~ 하단 조작 세이프존 위. 캐릭터는 여기 안에서만.
-    const playBottom = GAME_HEIGHT - BOTTOM_MARGIN;
-    this.physics.world.setBounds(6, HUD_HEIGHT, GAME_WIDTH - 12, playBottom - HUD_HEIGHT);
-
-    // 하단 조작 세이프존 표시 (엄지 두는 곳 — 여기엔 캐릭터가 안 옴)
-    this.add.rectangle(0, playBottom, GAME_WIDTH, BOTTOM_MARGIN, 0x000000, 0.16).setOrigin(0, 0).setDepth(2);
-    this.add.rectangle(0, playBottom, GAME_WIDTH, 2, COLORS.accent, 0.25).setOrigin(0, 0).setDepth(2);
-    const hint = this.add
-      .text(GAME_WIDTH / 2, playBottom + BOTTOM_MARGIN / 2, '↑ 이 아래를 손가락으로 드래그해서 이동', {
-        fontFamily: FONT,
-        fontSize: '14px',
-        color: CSS.textDim,
-      })
-      .setOrigin(0.5)
-      .setDepth(3)
-      .setAlpha(0.7);
-    this.tweens.add({ targets: hint, alpha: 0, delay: 5000, duration: 1200, onComplete: () => hint.destroy() });
+        .setAlpha(0.95)
+        .setScale(Phaser.Math.FloatBetween(0.7, 1.4));
+    }
 
     // 그룹
     this.enemies = this.physics.add.group();
@@ -183,9 +152,10 @@ export default class GameScene extends Phaser.Scene {
     this.enemyProjectiles = this.physics.add.group(); // 보스 등 적 투사체
     this.gems = this.physics.add.group();
 
-    // 플레이어 (플레이 영역 중앙쯤)
-    this.player = new Player(this, GAME_WIDTH / 2, (HUD_HEIGHT + playBottom) / 2 + 60);
+    // 플레이어: 월드 중앙에서 시작, 카메라가 부드럽게 추적
+    this.player = new Player(this, WORLD_W / 2, WORLD_H / 2);
     this.player.setDepth(10);
+    this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
 
     // 시스템
     this.weaponSystem = new WeaponSystem(this);
@@ -325,7 +295,10 @@ export default class GameScene extends Phaser.Scene {
   }
 
   spawnEnemy(def: EnemyDef, diff: number, isBoss: boolean): Enemy {
-    const pos = isBoss ? { x: GAME_WIDTH / 2, y: HUD_HEIGHT + 40 } : this.randomEdge();
+    // 보스는 플레이어 위쪽(화면 안쪽)에서 등장, 잡몹은 화면 밖에서
+    const pos = isBoss
+      ? { x: this.player.x, y: Phaser.Math.Clamp(this.player.y - 240, 60, WORLD_H - 60) }
+      : this.randomEdge();
     const e = new Enemy(this, pos.x, pos.y);
     e.spawn(def, diff, pos.x, pos.y, isBoss);
     e.setDepth(isBoss ? 9 : 6);
@@ -340,21 +313,32 @@ export default class GameScene extends Phaser.Scene {
     return e;
   }
 
+  // 카메라에 보이는 영역 바로 바깥에서 스폰 → 플레이어를 향해 몰려옴
   private randomEdge(): { x: number; y: number } {
-    const m = 40;
-    const top = HUD_HEIGHT;
-    const bottom = GAME_HEIGHT - BOTTOM_MARGIN; // 플레이 영역 하단
+    const view = this.cameras.main.worldView;
+    const m = 70;
     const side = Phaser.Math.Between(0, 3);
+    let x: number;
+    let y: number;
     switch (side) {
       case 0:
-        return { x: Phaser.Math.Between(0, GAME_WIDTH), y: top - m };
+        x = Phaser.Math.Between(view.left, view.right);
+        y = view.top - m;
+        break;
       case 1:
-        return { x: GAME_WIDTH + m, y: Phaser.Math.Between(top, bottom) };
+        x = view.right + m;
+        y = Phaser.Math.Between(view.top, view.bottom);
+        break;
       case 2:
-        return { x: Phaser.Math.Between(0, GAME_WIDTH), y: bottom + m };
+        x = Phaser.Math.Between(view.left, view.right);
+        y = view.bottom + m;
+        break;
       default:
-        return { x: -m, y: Phaser.Math.Between(top, bottom) };
+        x = view.left - m;
+        y = Phaser.Math.Between(view.top, view.bottom);
+        break;
     }
+    return { x: Phaser.Math.Clamp(x, -m, WORLD_W + m), y: Phaser.Math.Clamp(y, -m, WORLD_H + m) };
   }
 
   damageEnemy(enemy: Enemy, amount: number, showNumber = true): void {
@@ -467,10 +451,15 @@ export default class GameScene extends Phaser.Scene {
 
   private cullProjectiles(): void {
     const now = this.time.now;
+    const px = this.player.x;
+    const py = this.player.y;
+    const maxD2 = 1300 * 1300; // 플레이어에서 너무 멀면 제거
     const cull = (grp: Phaser.Physics.Arcade.Group) => {
       (grp.getChildren() as Phaser.Physics.Arcade.Image[]).forEach((p) => {
         if (!p.active) return;
-        if (now > (p.getData('dieAt') as number) || p.x < -50 || p.x > GAME_WIDTH + 50 || p.y < -50 || p.y > GAME_HEIGHT + 50) {
+        const dx = p.x - px;
+        const dy = p.y - py;
+        if (now > (p.getData('dieAt') as number) || dx * dx + dy * dy > maxD2) {
           p.destroy();
         }
       });
@@ -555,8 +544,8 @@ export default class GameScene extends Phaser.Scene {
     const pool = this.island.waves[this.island.waves.length - 1].enemies;
     const id = pool[Math.floor(Math.random() * pool.length)];
     const e = this.spawnEnemy(ENEMIES[id], this.island.difficulty, false);
-    const x = Phaser.Math.Clamp(bx + Phaser.Math.Between(-50, 50), 20, GAME_WIDTH - 20);
-    const y = Phaser.Math.Clamp(by + Phaser.Math.Between(-50, 50), HUD_HEIGHT + 20, GAME_HEIGHT - 170);
+    const x = Phaser.Math.Clamp(bx + Phaser.Math.Between(-60, 60), 20, WORLD_W - 20);
+    const y = Phaser.Math.Clamp(by + Phaser.Math.Between(-60, 60), 20, WORLD_H - 20);
     e.setPosition(x, y);
     (e.body as Phaser.Physics.Arcade.Body).reset(x, y);
   }
