@@ -31,6 +31,9 @@ jobs:
         run: npm run build
       - name: Pages 설정
         uses: actions/configure-pages@v5
+        with:
+          # 저장소에 Pages 가 안 켜져 있으면 자동으로 켬 (Settings 수동 클릭 불필요)
+          enablement: true
       - name: 결과물 업로드
         uses: actions/upload-pages-artifact@v3
         with:
