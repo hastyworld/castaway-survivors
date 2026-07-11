@@ -670,6 +670,131 @@ export function generateArt(scene: Phaser.Scene): void {
   g.fillCircle(40, 36, 7);
   tex('bush');
 
+  // ---------- 투사체: 작살 (긴 창) ----------
+  g.fillStyle(0x8a6239, 1); // 자루
+  g.fillRect(6, 29, 42, 6);
+  g.fillStyle(0xd8e8f0, 1); // 창날
+  g.fillTriangle(46, 22, 62, 32, 46, 42);
+  g.fillStyle(0xaac8d8, 1);
+  g.fillTriangle(48, 26, 58, 32, 48, 38);
+  g.fillStyle(0xd8e8f0, 1); // 미늘
+  g.fillTriangle(44, 24, 50, 30, 40, 30);
+  tex('harpoon_p');
+
+  // ---------- 투사체: 성게 가시 (뾰족한 공) ----------
+  g.fillStyle(0x5a3fa0, 1);
+  for (let i = 0; i < 10; i++) {
+    const a = (Math.PI / 5) * i;
+    g.fillTriangle(
+      32 + Math.cos(a) * 30, 32 + Math.sin(a) * 30,
+      32 + Math.cos(a + 0.5) * 14, 32 + Math.sin(a + 0.5) * 14,
+      32 + Math.cos(a - 0.5) * 14, 32 + Math.sin(a - 0.5) * 14
+    );
+  }
+  g.fillStyle(0x8a6ad8, 1);
+  g.fillCircle(32, 32, 15);
+  g.fillStyle(0xb59af0, 1);
+  g.fillCircle(28, 28, 6);
+  tex('urchin_p');
+
+  // ---------- 링 (파도 충격파/픽업 광채용, 흰 테두리 원) ----------
+  g.lineStyle(6, WHITE, 1);
+  g.strokeCircle(64, 64, 58);
+  g.lineStyle(3, WHITE, 0.5);
+  g.strokeCircle(64, 64, 50);
+  g.generateTexture('ring', 128, 128);
+  g.clear();
+
+  // ---------- 아이템: 고기 (체력 회복) ----------
+  g.fillStyle(0xf0e6d0, 1); // 뼈
+  g.fillRect(10, 28, 22, 8);
+  g.fillCircle(9, 27, 5);
+  g.fillCircle(9, 37, 5);
+  g.fillStyle(0xc0563c, 1); // 살코기
+  g.fillEllipse(40, 32, 32, 26);
+  g.fillStyle(0xe07a5c, 1);
+  g.fillEllipse(44, 28, 18, 12);
+  tex('item_meat');
+
+  // ---------- 아이템: 자석 (전체 흡수) ----------
+  g.fillStyle(0xd84a4a, 1); // U자 자석
+  g.fillRect(18, 14, 10, 28);
+  g.fillRect(36, 14, 10, 28);
+  g.fillEllipse(32, 42, 28, 20);
+  g.fillStyle(0x0d3b5c, 1);
+  g.fillEllipse(32, 38, 12, 10); // 안쪽 파냄
+  g.fillRect(26, 14, 12, 26);
+  g.fillStyle(0xe8e8e8, 1); // 끝부분
+  g.fillRect(18, 12, 10, 8);
+  g.fillRect(36, 12, 10, 8);
+  tex('item_magnet');
+
+  // ---------- 아이템: 폭탄 (광역 폭발) ----------
+  g.fillStyle(0x2a2f38, 1);
+  g.fillCircle(32, 38, 18);
+  g.fillStyle(0x454c58, 1);
+  g.fillCircle(26, 32, 7); // 하이라이트
+  g.fillStyle(0x8a6239, 1); // 심지
+  g.fillRect(30, 16, 5, 8);
+  g.fillStyle(0xffd45e, 1); // 불꽃
+  g.fillCircle(33, 12, 5);
+  g.fillStyle(0xff7a3c, 1);
+  g.fillCircle(33, 12, 2.5);
+  tex('item_bomb');
+
+  // ---------- 아이템: 보물상자 (무기 강화) ----------
+  g.fillStyle(0x000000, 0.15);
+  g.fillEllipse(32, 52, 36, 8);
+  g.fillStyle(0x8a6239, 1); // 몸통
+  g.fillRoundedRect(12, 28, 40, 22, 4);
+  g.fillStyle(0xa87c4a, 1); // 뚜껑
+  g.fillRoundedRect(10, 18, 44, 14, 6);
+  g.fillStyle(0xffd45e, 1); // 금장식 띠
+  g.fillRect(29, 18, 6, 32);
+  g.fillRect(12, 30, 40, 3);
+  g.fillStyle(0xfff2c0, 1); // 자물쇠
+  g.fillCircle(32, 36, 4);
+  tex('chest');
+
+  // ---------- 환경: 나뭇잎 (떠다니는 파티클) ----------
+  g.fillStyle(0x4fc07f, 1);
+  g.fillEllipse(12, 12, 18, 8);
+  g.fillStyle(0x2e8b57, 1);
+  g.fillEllipse(12, 12, 12, 4);
+  tex('leaf', 24);
+
+  // ---------- 환경: 조개 ----------
+  g.fillStyle(0xf0d8e8, 1);
+  g.fillEllipse(16, 20, 24, 16);
+  g.fillStyle(0xd8b0c8, 1);
+  g.fillTriangle(16, 22, 8, 12, 12, 22);
+  g.fillTriangle(16, 22, 16, 10, 20, 22);
+  g.fillTriangle(16, 22, 24, 12, 20, 22);
+  tex('shell', 32);
+
+  // ---------- 환경: 들꽃 ----------
+  g.fillStyle(0xffb0c8, 1);
+  for (let i = 0; i < 5; i++) {
+    const a = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+    g.fillCircle(16 + Math.cos(a) * 7, 14 + Math.sin(a) * 7, 5);
+  }
+  g.fillStyle(0xffd45e, 1);
+  g.fillCircle(16, 14, 4);
+  tex('flower', 32);
+
+  // ---------- 환경: 횃불 ----------
+  g.fillStyle(0x000000, 0.15);
+  g.fillEllipse(32, 58, 20, 6);
+  g.fillStyle(0x6b4a2b, 1); // 기둥
+  g.fillRect(29, 28, 6, 30);
+  g.fillStyle(0x8a6239, 1);
+  g.fillRect(26, 26, 12, 6);
+  g.fillStyle(0xff7a3c, 1); // 불꽃
+  g.fillEllipse(32, 18, 14, 20);
+  g.fillStyle(0xffd45e, 1);
+  g.fillEllipse(32, 21, 8, 12);
+  tex('torch');
+
   // ---------- UI: 둥근 패널 (버튼/카드용, 나인슬라이스로 tint해서 사용) ----------
   g.fillStyle(0xffffff, 1);
   g.fillRoundedRect(0, 0, 48, 48, 16);

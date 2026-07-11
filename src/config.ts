@@ -50,6 +50,9 @@ export const COLORS = {
   coconut: 0x6b4a2b, // 야자열매(기본 무기)
   starfish: 0xffcf4d, // 불가사리(관통)
   campfire: 0xff7a3c, // 모닥불(오라)
+  harpoon: 0x9fd8e8, // 작살(장거리 관통)
+  urchin: 0x8a6ad8, // 성게 가시(회전 방어)
+  wave: 0x54c8e8, // 파도 술법(주기 충격파)
 
   xp: 0x64e2a0, // 경험치 젬
   gold: 0xffd45e, // 골드
@@ -78,8 +81,8 @@ export const FONT = 'Arial, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
 
 // ---------------- 공용 타입 ----------------
 
-export type WeaponId = 'coconut' | 'starfish' | 'campfire';
-export type PassiveId = 'maxhp' | 'power' | 'speed' | 'haste' | 'magnet' | 'regen';
+export type WeaponId = 'coconut' | 'starfish' | 'campfire' | 'harpoon' | 'urchin' | 'wave';
+export type PassiveId = 'maxhp' | 'power' | 'speed' | 'haste' | 'magnet' | 'regen' | 'crit' | 'area' | 'luck';
 // 플레이 가능한 캐릭터 (characters.ts 에 정의)
 export type CharId = 'castaway' | 'fisher' | 'pirate' | 'shaman';
 

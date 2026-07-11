@@ -18,6 +18,9 @@ export default class Player extends Phaser.Physics.Arcade.Image {
   powerMult = 1; // 모든 무기 피해에 곱해짐
   hasteMult = 1; // 공격 쿨다운 배수(작을수록 빠름)
   regenPerSec = 0;
+  critChance = 0; // 치명타 확률 (0~1, 피해 1.8배)
+  areaMult = 1; // 공격 범위/투사체 크기 배수
+  luckMult = 1; // 아이템 드랍 확률 배수
 
   invulnUntil = 0; // 피격 무적 종료 시각(ms)
 

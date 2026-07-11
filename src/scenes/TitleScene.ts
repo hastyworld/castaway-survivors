@@ -74,7 +74,7 @@ export default class TitleScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 30, 'v0.9 · 이동만 조작, 공격은 자동 · 화면을 누르면 소리 켜짐', {
+      .text(GAME_WIDTH / 2, GAME_HEIGHT - 30, 'v1.0 · 이동만 조작, 공격은 자동 · 화면을 누르면 소리 켜짐', {
         fontFamily: FONT,
         fontSize: '12px',
         color: CSS.textDim,

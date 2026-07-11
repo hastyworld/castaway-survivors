@@ -15,7 +15,9 @@ export default class Enemy extends Phaser.Physics.Arcade.Image {
   isBoss = false;
   nextContactAt = 0; // 접촉 데미지 쿨다운
   baseColor = 0xffffff; // 원래 색 (피격 플래시 후 복원)
+  knockUntil = 0; // 넉백(파도 술법 등) 동안 추적 정지
   private flashUntil = 0;
+  private wobblePhase = Math.random() * Math.PI * 2; // 걷기 흔들림 위상(개체별로 다르게)
   private hpBar?: Phaser.GameObjects.Rectangle;
   private hpBarBg?: Phaser.GameObjects.Rectangle;
 
@@ -69,17 +71,33 @@ export default class Enemy extends Phaser.Physics.Arcade.Image {
   track(px: number, py: number): void {
     const body = this.body as Phaser.Physics.Arcade.Body;
     if (!body) return;
+    const now = this.scene.time.now;
     // 피격 플래시 복원 (텍스처 색으로)
-    if (this.flashUntil && this.scene.time.now > this.flashUntil) {
+    if (this.flashUntil && now > this.flashUntil) {
       this.clearTint();
       this.flashUntil = 0;
     }
+    // 넉백 중엔 추적 안 함 (밀려나는 속도 유지)
+    if (now < this.knockUntil) return;
     const angle = Math.atan2(py - this.y, px - this.x);
     body.setVelocity(Math.cos(angle) * this.speed, Math.sin(angle) * this.speed);
+    // 걷기 흔들림 (좌우 기울임) + 진행 방향 바라보기
+    this.setRotation(Math.sin(now * 0.012 + this.wobblePhase) * 0.12);
+    this.setFlipX(px < this.x);
     if (this.isBoss && this.hpBar && this.hpBarBg) {
       this.hpBarBg.setPosition(this.x, this.y - this.displayHeight / 2 - 10);
       this.hpBar.setPosition(this.x - (90 - this.hpBar.width) / 2, this.y - this.displayHeight / 2 - 10);
     }
+  }
+
+  // 밖으로 밀쳐내기 (파도 술법/폭탄)
+  knockback(fromX: number, fromY: number, force: number, durMs = 260): void {
+    if (this.isBoss) return; // 보스는 밀리지 않음
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    if (!body) return;
+    const a = Math.atan2(this.y - fromY, this.x - fromX);
+    body.setVelocity(Math.cos(a) * force, Math.sin(a) * force);
+    this.knockUntil = this.scene.time.now + durMs;
   }
 
   cleanup(): void {

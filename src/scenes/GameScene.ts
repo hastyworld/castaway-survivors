@@ -25,6 +25,7 @@ import WaveManager from '../systems/WaveManager';
 import Joystick from '../systems/Joystick';
 import BossAI from '../systems/BossAI';
 import Hud from '../ui/Hud';
+import TapZones from '../ui/TapZones';
 import LevelUp, { UpgradeOption } from '../ui/LevelUp';
 import { makeButton } from '../ui/Button';
 import Fx from '../systems/Fx';
@@ -39,6 +40,9 @@ const WEAPON_COLORS: Record<WeaponId, number> = {
   coconut: COLORS.coconut,
   starfish: COLORS.starfish,
   campfire: COLORS.campfire,
+  harpoon: COLORS.harpoon,
+  urchin: COLORS.urchin,
+  wave: COLORS.wave,
 };
 
 export default class GameScene extends Phaser.Scene {
@@ -71,6 +75,9 @@ export default class GameScene extends Phaser.Scene {
   private paused = false; // 레벨업 팝업 or 일시정지 동안 true (update/물리 정지)
   private isPaused = false; // 수동 일시정지 상태
   private pauseOverlay?: Phaser.GameObjects.Container;
+  private tapZones!: TapZones; // 화면 고정 버튼 탭 판정 (카메라 스크롤 히트영역 버그 우회)
+  private pauseMuteTxt?: Phaser.GameObjects.Text; // 일시정지 메뉴의 소리 버튼 라벨
+  private muteIcon?: Phaser.GameObjects.Text; // 인게임 ♪ 아이콘
 
   private level = 1;
   private xp = 0;
@@ -79,6 +86,8 @@ export default class GameScene extends Phaser.Scene {
   private kills = 0;
   private elapsed = 0;
 
+  private pickups!: Phaser.Physics.Arcade.Group; // 드랍 아이템 (고기/자석/폭탄/상자)
+
   private passiveLevels: Record<PassiveId, number> = {
     maxhp: 0,
     power: 0,
@@ -86,6 +95,9 @@ export default class GameScene extends Phaser.Scene {
     haste: 0,
     magnet: 0,
     regen: 0,
+    crit: 0,
+    area: 0,
+    luck: 0,
   };
 
   private enemyCache: Enemy[] = [];
@@ -108,7 +120,7 @@ export default class GameScene extends Phaser.Scene {
     this.runGold = 0;
     this.kills = 0;
     this.elapsed = 0;
-    this.passiveLevels = { maxhp: 0, power: 0, speed: 0, haste: 0, magnet: 0, regen: 0 };
+    this.passiveLevels = { maxhp: 0, power: 0, speed: 0, haste: 0, magnet: 0, regen: 0, crit: 0, area: 0, luck: 0 };
   }
 
   create(): void {
@@ -136,22 +148,71 @@ export default class GameScene extends Phaser.Scene {
         .setDepth(-92);
     }
 
-    // 월드 곳곳에 소품(야자수/바위/수풀) — 이동하며 지나감
+    // 물웅덩이 — 은은히 반짝이는 얕은 물
+    for (let i = 0; i < 7; i++) {
+      const pond = this.add
+        .ellipse(Phaser.Math.Between(120, WORLD_W - 120), Phaser.Math.Between(120, WORLD_H - 120), Phaser.Math.Between(140, 260), Phaser.Math.Between(90, 150), 0x54c8e8, 0.16)
+        .setDepth(-90);
+      const shine = this.add.ellipse(pond.x - 20, pond.y - 12, pond.width * 0.5, pond.height * 0.4, 0xbfeeff, 0.1).setDepth(-89);
+      this.tweens.add({ targets: shine, alpha: 0.22, scaleX: 1.15, duration: Phaser.Math.Between(1600, 2600), yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    }
+
+    // 바닥 잔장식 — 조개/들꽃 (밟고 지나가는 느낌)
+    for (let i = 0; i < 46; i++) {
+      this.add
+        .image(Phaser.Math.Between(30, WORLD_W - 30), Phaser.Math.Between(30, WORLD_H - 30), i % 2 === 0 ? 'shell' : 'flower')
+        .setDepth(-85)
+        .setAlpha(0.85)
+        .setScale(Phaser.Math.FloatBetween(0.5, 0.9));
+    }
+
+    // 월드 곳곳에 소품(야자수/바위/수풀) — 이동하며 지나감 + 바람에 살랑임
     const propKeys = ['palm', 'rock', 'bush', 'palm', 'bush', 'rock'];
     for (let i = 0; i < 48; i++) {
       const key = propKeys[Phaser.Math.Between(0, propKeys.length - 1)];
-      this.add
+      const prop = this.add
         .image(Phaser.Math.Between(50, WORLD_W - 50), Phaser.Math.Between(50, WORLD_H - 50), key)
         .setDepth(-70)
         .setAlpha(0.95)
         .setScale(Phaser.Math.FloatBetween(0.7, 1.4));
+      if (key !== 'rock') {
+        // 야자수·수풀은 바람에 흔들림
+        this.tweens.add({ targets: prop, angle: Phaser.Math.FloatBetween(2.5, 4.5), duration: Phaser.Math.Between(1400, 2400), yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      }
     }
+
+    // 횃불 — 불꽃이 일렁이는 분위기 조명
+    for (let i = 0; i < 9; i++) {
+      const tx = Phaser.Math.Between(100, WORLD_W - 100);
+      const ty = Phaser.Math.Between(100, WORLD_H - 100);
+      this.add.image(tx, ty, 'torch').setDepth(-69);
+      const glow = this.add.image(tx, ty - 14, 'circle').setTint(0xffa94d).setAlpha(0.13).setDisplaySize(110, 110).setBlendMode(Phaser.BlendModes.ADD).setDepth(-68);
+      this.tweens.add({ targets: glow, alpha: 0.22, scale: glow.scale * 1.18, duration: Phaser.Math.Between(380, 560), yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    }
+
+    // 떠다니는 나뭇잎 (화면 고정 파티클 — 바람의 흐름)
+    this.add
+      .particles(0, 0, 'leaf', {
+        x: { min: -20, max: GAME_WIDTH + 20 },
+        y: -20,
+        lifespan: 9000,
+        speedY: { min: 24, max: 55 },
+        speedX: { min: -35, max: 15 },
+        rotate: { start: 0, end: 360 },
+        scale: { min: 0.5, max: 0.9 },
+        alpha: { start: 0.55, end: 0 },
+        frequency: 900,
+        quantity: 1,
+      })
+      .setDepth(95) // HUD(100+) 아래, 게임 위
+      .setScrollFactor(0);
 
     // 그룹
     this.enemies = this.physics.add.group();
     this.projectiles = this.physics.add.group();
     this.enemyProjectiles = this.physics.add.group(); // 보스 등 적 투사체
     this.gems = this.physics.add.group();
+    this.pickups = this.physics.add.group(); // 드랍 아이템
 
     // 플레이어: 월드 중앙에서 시작, 카메라가 부드럽게 추적
     this.player = new Player(this, WORLD_W / 2, WORLD_H / 2);
@@ -186,26 +247,45 @@ export default class GameScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.enemies, this.onPlayerContact, undefined, this);
     this.physics.add.overlap(this.player, this.gems, this.onCollectGem, undefined, this);
     this.physics.add.overlap(this.player, this.enemyProjectiles, this.onEnemyProjectileHit, undefined, this);
+    this.physics.add.overlap(this.player, this.pickups, this.onPickup, undefined, this);
 
     this.announce(this.waves.label());
 
+    // ---- 화면 고정 버튼들 ----
+    // ⚠ 스크롤 카메라에선 setInteractive 히트영역이 어긋나므로(레벨업 카드와 동일)
+    //    TapZones(씬 pointerdown 좌표 판정)로 입력 처리. 그림은 그대로 그림만 담당.
+    this.tapZones = new TapZones(this);
+    this.joystick.blockedAt = (x, y) => this.tapZones.hitAt(x, y); // 버튼 위 탭에 조이스틱 안 뜨게
+
     // 음소거 버튼 (우하단)
-    const mb = this.add.circle(GAME_WIDTH - 26, GAME_HEIGHT - 26, 18, 0x000000, 0.35).setScrollFactor(0).setDepth(210).setInteractive({ useHandCursor: true });
-    const mi = this.add
+    this.add.circle(GAME_WIDTH - 26, GAME_HEIGHT - 26, 18, 0x000000, 0.35).setScrollFactor(0).setDepth(210);
+    this.muteIcon = this.add
       .text(GAME_WIDTH - 26, GAME_HEIGHT - 27, '♪', { fontFamily: FONT, fontSize: '18px', color: Sfx.muted ? '#6f8496' : CSS.accent, fontStyle: 'bold' })
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(211);
-    mb.on('pointerup', () => {
-      const m = Sfx.toggleMute();
-      mi.setColor(m ? '#6f8496' : CSS.accent);
-    });
 
     // 일시정지 버튼 (플레이영역 우상단)
-    const pauseBtn = this.add.circle(GAME_WIDTH - 28, HUD_HEIGHT + 28, 18, 0x000000, 0.4).setScrollFactor(0).setDepth(210).setInteractive({ useHandCursor: true });
+    this.add.circle(GAME_WIDTH - 28, HUD_HEIGHT + 28, 18, 0x000000, 0.4).setScrollFactor(0).setDepth(210);
     this.add.rectangle(GAME_WIDTH - 32, HUD_HEIGHT + 28, 4, 14, 0xffffff).setScrollFactor(0).setDepth(211);
     this.add.rectangle(GAME_WIDTH - 24, HUD_HEIGHT + 28, 4, 14, 0xffffff).setScrollFactor(0).setDepth(211);
-    pauseBtn.on('pointerup', () => this.openPause());
+
+    const inPlay = () => this.state === 'playing' && !this.isPaused && !this.levelUp.isOpen;
+    this.tapZones.add(GAME_WIDTH - 26, GAME_HEIGHT - 26, 52, 52, () => {
+      const m = Sfx.toggleMute();
+      this.muteIcon?.setColor(m ? '#6f8496' : CSS.accent);
+    }, inPlay);
+    this.tapZones.add(GAME_WIDTH - 28, HUD_HEIGHT + 28, 52, 52, () => this.openPause(), inPlay);
+
+    // 일시정지 메뉴 버튼들 (위치 고정 — 메뉴 열려있을 때만 활성)
+    const inMenu = () => this.isPaused;
+    this.tapZones.add(GAME_WIDTH / 2, GAME_HEIGHT - 210, 260, 62, () => this.closePause(), inMenu);
+    this.tapZones.add(GAME_WIDTH / 2, GAME_HEIGHT - 138, 200, 48, () => {
+      Sfx.toggleMute();
+      this.pauseMuteTxt?.setText(Sfx.muted ? '소리 켜기' : '소리 끄기');
+      this.muteIcon?.setColor(Sfx.muted ? '#6f8496' : CSS.accent);
+    }, inMenu);
+    this.tapZones.add(GAME_WIDTH / 2, GAME_HEIGHT - 76, 200, 46, () => this.scene.start('Map'), inMenu);
   }
 
   // ---------------- 매 프레임 ----------------
@@ -260,8 +340,15 @@ export default class GameScene extends Phaser.Scene {
     const body = this.player.body as Phaser.Physics.Arcade.Body;
     if (len > 0) {
       body.setVelocity((dx / len) * this.player.speed, (dy / len) * this.player.speed);
+      // 걷기 애니메이션: 몸 흔들림 + 통통 뛰는 스쿼시
+      const t = this.time.now * 0.014;
+      this.player.setRotation(Math.sin(t) * 0.09);
+      const squash = 1 + Math.abs(Math.sin(t)) * 0.06;
+      this.player.setDisplaySize(42, 42 * squash);
     } else {
       body.setVelocity(0, 0);
+      this.player.setRotation(0);
+      this.player.setDisplaySize(42, 42);
     }
     // 이동 방향에 따라 캐릭터 좌우 반전
     if (dx < -0.1) this.player.setFlipX(true);
@@ -310,6 +397,11 @@ export default class GameScene extends Phaser.Scene {
       e.setScale(0).setAlpha(0);
       this.tweens.add({ targets: e, scale: def.radius / 32, alpha: 1, duration: 500, ease: 'Back.out' });
       this.bossAI = new BossAI(this, e);
+    } else {
+      // 잡몹도 뿅 하고 등장 (생동감)
+      const target = e.scale;
+      e.setScale(target * 0.3).setAlpha(0.2);
+      this.tweens.add({ targets: e, scale: target, alpha: 1, duration: 240, ease: 'Back.out' });
     }
     return e;
   }
@@ -344,10 +436,14 @@ export default class GameScene extends Phaser.Scene {
 
   damageEnemy(enemy: Enemy, amount: number, showNumber = true): void {
     if (!enemy.active) return;
+    // 치명타 (급소 노리기 특성)
+    const crit = this.player.critChance > 0 && Math.random() < this.player.critChance;
+    if (crit) amount *= 1.8;
     enemy.takeDamage(amount);
     Sfx.hit();
     if (showNumber) {
-      this.fx.number(enemy.x, enemy.y - enemy.displayHeight / 2, amount, enemy.isBoss ? CSS.accent : '#ffffff', enemy.isBoss);
+      const color = crit ? '#ffd45e' : enemy.isBoss ? CSS.accent : '#ffffff';
+      this.fx.number(enemy.x, enemy.y - enemy.displayHeight / 2, amount, color, enemy.isBoss || crit);
     }
     if (enemy.hp <= 0) this.killEnemy(enemy);
   }
@@ -359,6 +455,14 @@ export default class GameScene extends Phaser.Scene {
 
     // 경험치 젬 드롭
     this.dropGem(enemy.x, enemy.y, enemy.xpValue);
+
+    // 아이템 드랍 (바다의 행운으로 확률 상승)
+    if (!enemy.isBoss) {
+      const roll = Math.random() / this.player.luckMult;
+      if (roll < 0.005) this.spawnPickup(enemy.x, enemy.y, 'bomb');
+      else if (roll < 0.012) this.spawnPickup(enemy.x, enemy.y, 'magnet');
+      else if (roll < 0.03) this.spawnPickup(enemy.x, enemy.y, 'meat');
+    }
 
     // 사망 연출: 파티클 버스트 + 효과음
     this.fx.burst(enemy.x, enemy.y, enemy.baseColor, enemy.isBoss ? 24 : 8);
@@ -381,6 +485,101 @@ export default class GameScene extends Phaser.Scene {
     this.gems.add(g);
   }
 
+  // ---------------- 드랍 아이템 (고기/자석/폭탄/보물상자) ----------------
+  spawnPickup(x: number, y: number, kind: 'meat' | 'magnet' | 'bomb' | 'chest'): void {
+    const tex = kind === 'chest' ? 'chest' : `item_${kind}`;
+    const it = this.physics.add.image(x, y, tex).setDepth(4).setDisplaySize(kind === 'chest' ? 44 : 34, kind === 'chest' ? 44 : 34);
+    this.pickups.add(it);
+    (it.body as Phaser.Physics.Arcade.Body).setCircle(30, 2, 2);
+    it.setData('kind', kind);
+    // 존재감: 광채 링 + 둥실둥실
+    const glow = this.add.image(x, y, 'ring').setTint(kind === 'chest' ? 0xffd45e : 0xbfeeff).setAlpha(0.4).setDisplaySize(52, 52).setDepth(3);
+    it.setData('glow', glow);
+    this.tweens.add({ targets: glow, scale: glow.scale * 1.25, alpha: 0.15, duration: 700, yoyo: true, repeat: -1 });
+    this.tweens.add({ targets: it, y: y - 6, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+  }
+
+  private onPickup: ArcadePhysicsCallback = (_playerObj, itemObj) => {
+    const it = itemObj as Phaser.Physics.Arcade.Image;
+    if (!it.active) return;
+    const kind = it.getData('kind') as string;
+    (it.getData('glow') as Phaser.GameObjects.Image | undefined)?.destroy();
+    it.destroy();
+    Sfx.levelup();
+    switch (kind) {
+      case 'meat': {
+        const amount = Math.round(this.player.maxHp * 0.25);
+        this.player.heal(amount);
+        this.fx.number(this.player.x, this.player.y - 30, amount, CSS.green, true);
+        break;
+      }
+      case 'magnet':
+        // 화면 안 모든 젬 흡수
+        (this.gems.getChildren() as Phaser.Physics.Arcade.Image[]).forEach((g) => {
+          if (g.active) g.setData('vacuum', true);
+        });
+        this.announce('🧲 자석! 경험치 흡수!');
+        break;
+      case 'bomb':
+        this.cameras.main.shake(280, 0.012);
+        this.fx.levelRing(this.player.x, this.player.y);
+        this.waveBlast(this.player.x, this.player.y, 340, 60 * this.player.powerMult, 500, true);
+        this.announce('💣 폭발!');
+        break;
+      case 'chest': {
+        // 보물상자: 보유 무기 중 하나 강화 (전부 만렙이면 골드)
+        const upgradable = WEAPONS.filter((w) => {
+          const lvl = this.weaponSystem.level(w.id);
+          return lvl > 0 && lvl < w.maxLevel;
+        });
+        if (upgradable.length > 0) {
+          const w = upgradable[Math.floor(Math.random() * upgradable.length)];
+          this.weaponSystem.addOrLevel(w.id);
+          this.announce(`🎁 ${w.name} 강화!`);
+        } else {
+          this.runGold += 30;
+          this.announce('🎁 골드 +30!');
+        }
+        this.fx.levelRing(this.player.x, this.player.y);
+        break;
+      }
+    }
+  };
+
+  // 스테이지 전멸 보상: 근처에 보물상자 (WaveManager 가 호출)
+  onStageClear(): void {
+    const a = Math.random() * Math.PI * 2;
+    const x = Phaser.Math.Clamp(this.player.x + Math.cos(a) * 130, 40, WORLD_W - 40);
+    const y = Phaser.Math.Clamp(this.player.y + Math.sin(a) * 130, 40, WORLD_H - 40);
+    this.spawnPickup(x, y, 'chest');
+  }
+
+  // ---------------- 파도 술법/폭탄: 확산 충격파 ----------------
+  waveBlast(x: number, y: number, radius: number, dmg: number, knockForce: number, big: boolean): void {
+    // 시각: 확장되는 링
+    const ring = this.add.image(x, y, 'ring').setTint(big ? 0x8fe8ff : COLORS.wave).setAlpha(0.8).setDepth(7).setDisplaySize(40, 40);
+    this.tweens.add({
+      targets: ring,
+      displayWidth: radius * 2,
+      displayHeight: radius * 2,
+      alpha: 0,
+      duration: big ? 500 : 380,
+      ease: 'Cubic.out',
+      onComplete: () => ring.destroy(),
+    });
+    if (big) this.cameras.main.shake(120, 0.005);
+    // 판정: 범위 피해 + 넉백
+    const r2 = radius * radius;
+    this.getActiveEnemies().forEach((e) => {
+      const dx = e.x - x;
+      const dy = e.y - y;
+      if (dx * dx + dy * dy <= r2) {
+        this.damageEnemy(e, dmg);
+        e.knockback(x, y, knockForce);
+      }
+    });
+  }
+
   // ---------------- 투사체 ----------------
   spawnProjectile(
     x: number,
@@ -394,7 +593,7 @@ export default class GameScene extends Phaser.Scene {
     texture = 'circle',
     spin = 0,
     explodeRadius = 0
-  ): void {
+  ): Phaser.Physics.Arcade.Image {
     const p = this.physics.add.image(x, y, texture).setTint(tint).setDepth(8);
     p.setDisplaySize(radius * 2, radius * 2);
     // ⚠ 그룹에 먼저 add → 그 다음 속도 설정.
@@ -410,6 +609,7 @@ export default class GameScene extends Phaser.Scene {
     p.setData('hits', new Set<Enemy>());
     p.setData('dieAt', this.time.now + 2600);
     Sfx.shoot();
+    return p;
   }
 
   // 진화 무기 폭발 (범위 피해)
@@ -479,9 +679,11 @@ export default class GameScene extends Phaser.Scene {
       const dy = this.player.y - g.y;
       const d2 = dx * dx + dy * dy;
       const body = g.body as Phaser.Physics.Arcade.Body;
-      if (d2 < pr2) {
+      const vacuum = g.getData('vacuum') === true; // 자석 아이템: 거리 무관 흡수
+      if (vacuum || d2 < pr2) {
         const a = Math.atan2(dy, dx);
-        body.setVelocity(Math.cos(a) * 340, Math.sin(a) * 340);
+        const sp = vacuum ? 640 : 340;
+        body.setVelocity(Math.cos(a) * sp, Math.sin(a) * sp);
       } else {
         body.setVelocity(0, 0);
       }
@@ -658,6 +860,18 @@ export default class GameScene extends Phaser.Scene {
         p.regenPerSec += 0.6;
         this.passiveLevels.regen++;
         break;
+      case 'crit':
+        p.critChance += 0.07;
+        this.passiveLevels.crit++;
+        break;
+      case 'area':
+        p.areaMult += 0.12;
+        this.passiveLevels.area++;
+        break;
+      case 'luck':
+        p.luckMult += 0.3;
+        this.passiveLevels.luck++;
+        break;
       case 'heal':
         p.heal(40);
         break;
@@ -691,7 +905,7 @@ export default class GameScene extends Phaser.Scene {
     (this.player.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
 
     const c = this.add.container(0, 0).setDepth(520).setScrollFactor(0);
-    const dim = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.82).setOrigin(0, 0).setInteractive();
+    const dim = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.82).setOrigin(0, 0);
     const title = this.add.text(GAME_WIDTH / 2, 96, '일시정지', { fontFamily: FONT, fontSize: '34px', color: CSS.accent, fontStyle: 'bold' }).setOrigin(0.5);
     const sec = this.add.text(GAME_WIDTH / 2, 150, '현재 장착 (업그레이드 현황)', { fontFamily: FONT, fontSize: '16px', color: CSS.text, fontStyle: 'bold' }).setOrigin(0.5);
     c.add([dim, title, sec]);
@@ -714,14 +928,12 @@ export default class GameScene extends Phaser.Scene {
       }
     }
 
+    // 버튼 그림 (입력은 create()의 TapZones 가 담당 — 스크롤 카메라 히트영역 버그 우회)
     const muteLabel = () => (Sfx.muted ? '소리 켜기' : '소리 끄기');
-    const resume = makeButton(this, GAME_WIDTH / 2, GAME_HEIGHT - 210, '▶  계속하기', () => this.closePause(), { width: 260, height: 62, fontSize: 22 });
+    const resume = makeButton(this, GAME_WIDTH / 2, GAME_HEIGHT - 210, '▶  계속하기', () => {}, { width: 260, height: 62, fontSize: 22 });
     const muteBtn = makeButton(this, GAME_WIDTH / 2, GAME_HEIGHT - 138, muteLabel(), () => {}, { width: 200, height: 48, fill: COLORS.panelBorder, textColor: '#ffffff', fontSize: 16 });
-    (muteBtn.getData('hit') as Phaser.GameObjects.Zone).on('pointerup', () => {
-      Sfx.toggleMute();
-      (muteBtn.getData('txt') as Phaser.GameObjects.Text).setText(muteLabel());
-    });
-    const quit = makeButton(this, GAME_WIDTH / 2, GAME_HEIGHT - 76, '지도로 나가기', () => this.scene.start('Map'), { width: 200, height: 46, fill: COLORS.panelBorder, textColor: '#ffffff', fontSize: 16 });
+    this.pauseMuteTxt = muteBtn.getData('txt') as Phaser.GameObjects.Text;
+    const quit = makeButton(this, GAME_WIDTH / 2, GAME_HEIGHT - 76, '지도로 나가기', () => {}, { width: 200, height: 46, fill: COLORS.panelBorder, textColor: '#ffffff', fontSize: 16 });
     c.add([resume, muteBtn, quit]);
     this.pauseOverlay = c;
   }
@@ -730,6 +942,7 @@ export default class GameScene extends Phaser.Scene {
     if (!this.isPaused) return;
     this.pauseOverlay?.destroy(true);
     this.pauseOverlay = undefined;
+    this.pauseMuteTxt = undefined;
     this.isPaused = false;
 
     // 3-2-1 카운트다운 후 재개 (일시정지 해제 직후 피격 방지)

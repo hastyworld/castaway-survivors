@@ -17,6 +17,8 @@ export default class Joystick {
   vec = new Phaser.Math.Vector2(0, 0); // 정규화된 이동 방향(-1~1)
 
   enabled = true;
+  // 이 좌표가 UI 버튼 위라면 조이스틱을 만들지 않음 (GameScene 이 TapZones.hitAt 연결)
+  blockedAt?: (x: number, y: number) => boolean;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -41,6 +43,7 @@ export default class Joystick {
 
   private onDown(p: Phaser.Input.Pointer): void {
     if (!this.enabled || this.active) return;
+    if (this.blockedAt && this.blockedAt(p.x, p.y)) return;
     this.active = true;
     this.pointerId = p.id;
     this.originX = p.x;

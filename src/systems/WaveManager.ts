@@ -59,6 +59,7 @@ export default class WaveManager {
 
     // 전멸 판정: 다 뽑았고 + 다 죽음 → 다음 단계
     if (this.spawnedInWave >= wave.count && alive === 0) {
+      this.scene.onStageClear(); // 전멸 보상: 보물상자
       if (this.waveIndex < this.totalWaves - 1) {
         this.waveIndex += 1;
         this.spawnedInWave = 0;

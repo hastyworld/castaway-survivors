@@ -34,6 +34,9 @@ export const WEAPONS: WeaponDef[] = [
   { id: 'coconut', name: '야자열매 던지기', desc: '가장 가까운 적에게 열매를 던집니다.', maxLevel: 8 },
   { id: 'starfish', name: '불가사리 표창', desc: '적을 관통하며 날아가는 표창.', maxLevel: 8 },
   { id: 'campfire', name: '모닥불', desc: '주변의 적을 지속적으로 태웁니다.', maxLevel: 8 },
+  { id: 'harpoon', name: '작살', desc: '일직선으로 꿰뚫는 강력한 작살.', maxLevel: 8 },
+  { id: 'urchin', name: '성게 가시', desc: '내 주위를 도는 가시가 적을 벱니다.', maxLevel: 8 },
+  { id: 'wave', name: '파도 술법', desc: '주기적으로 충격파가 퍼져 적을 밀쳐냅니다.', maxLevel: 8 },
 ];
 
 // ---------------- 특성(판 안 성장 ①, 패시브) ----------------
@@ -44,6 +47,9 @@ export const PASSIVES: PassiveDef[] = [
   { id: 'haste', name: '숙련된 손놀림', desc: '공격 속도 +8%', maxLevel: 5 },
   { id: 'magnet', name: '자석 부적', desc: '경험치 획득 범위 +35', maxLevel: 5 },
   { id: 'regen', name: '재생력', desc: '초당 체력 +0.6 회복', maxLevel: 5 },
+  { id: 'crit', name: '급소 노리기', desc: '치명타 확률 +7% (피해 1.8배)', maxLevel: 5 },
+  { id: 'area', name: '커지는 힘', desc: '공격 범위/크기 +12%', maxLevel: 5 },
+  { id: 'luck', name: '바다의 행운', desc: '아이템 드랍 확률 +30%', maxLevel: 5 },
 ];
 
 // ---------------- 웨이브 생성 헬퍼 ----------------
