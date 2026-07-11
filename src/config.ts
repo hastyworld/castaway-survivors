@@ -80,6 +80,8 @@ export const FONT = 'Arial, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
 
 export type WeaponId = 'coconut' | 'starfish' | 'campfire';
 export type PassiveId = 'maxhp' | 'power' | 'speed' | 'haste' | 'magnet' | 'regen';
+// 플레이 가능한 캐릭터 (characters.ts 에 정의)
+export type CharId = 'castaway' | 'fisher' | 'pirate' | 'shaman';
 
 export interface EnemyDef {
   id: string;

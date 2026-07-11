@@ -6,6 +6,7 @@ import { CSS, FONT, GAME_WIDTH, GAME_HEIGHT, COLORS } from '../config';
 import { drawGradient } from '../ui/Background';
 import { makeButton } from '../ui/Button';
 import { load, currentVehicle } from '../save';
+import { heroTexture, selectedCharId, getChar, charStage } from '../characters';
 import { Sfx } from '../systems/Sfx';
 
 export default class TitleScene extends Phaser.Scene {
@@ -39,12 +40,23 @@ export default class TitleScene extends Phaser.Scene {
       .text(GAME_WIDTH / 2, 300, '무인도에서 살아남아 탈출하라', { fontFamily: FONT, fontSize: '15px', color: CSS.textDim })
       .setOrigin(0.5);
 
-    // 주인공 미리보기
-    const hero = this.add.image(GAME_WIDTH / 2, 400, 'player').setDisplaySize(80, 80);
-    this.tweens.add({ targets: hero, y: 384, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    // 주인공 미리보기 — 선택한 캐릭터의 진화 외형 + 현재 칭호
+    const hero = this.add.image(GAME_WIDTH / 2, 396, heroTexture()).setDisplaySize(84, 84);
+    this.tweens.add({ targets: hero, y: 380, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    const cid = selectedCharId();
+    this.add
+      .text(GAME_WIDTH / 2, 448, getChar(cid).stages[charStage(cid)].name, { fontFamily: FONT, fontSize: '15px', color: CSS.accent, fontStyle: 'bold' })
+      .setOrigin(0.5);
 
-    makeButton(this, GAME_WIDTH / 2, 560, '여정 시작', () => this.scene.start('Map'), { width: 260, height: 62, fontSize: 22 });
-    makeButton(this, GAME_WIDTH / 2, 636, '상점 (영구 성장)', () => this.scene.start('Shop'), {
+    makeButton(this, GAME_WIDTH / 2, 540, '여정 시작', () => this.scene.start('Map'), { width: 260, height: 62, fontSize: 22 });
+    makeButton(this, GAME_WIDTH / 2, 614, '캐릭터 (선택·진화)', () => this.scene.start('Chars'), {
+      width: 260,
+      height: 54,
+      fill: COLORS.panelBorder,
+      textColor: '#ffffff',
+      fontSize: 18,
+    });
+    makeButton(this, GAME_WIDTH / 2, 682, '상점 (영구 성장)', () => this.scene.start('Shop'), {
       width: 260,
       height: 54,
       fill: COLORS.panelBorder,
@@ -54,7 +66,7 @@ export default class TitleScene extends Phaser.Scene {
 
     const save = load();
     this.add
-      .text(GAME_WIDTH / 2, 720, `보유 골드  ◈${save.gold}    ·    현재 탈것: ${currentVehicle()}`, {
+      .text(GAME_WIDTH / 2, 752, `보유 골드  ◈${save.gold}    ·    현재 탈것: ${currentVehicle()}`, {
         fontFamily: FONT,
         fontSize: '15px',
         color: CSS.accent,
@@ -62,7 +74,7 @@ export default class TitleScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 30, 'v0.2 · 이동만 조작, 공격은 자동 · 화면을 누르면 소리 켜짐', {
+      .text(GAME_WIDTH / 2, GAME_HEIGHT - 30, 'v0.9 · 이동만 조작, 공격은 자동 · 화면을 누르면 소리 켜짐', {
         fontFamily: FONT,
         fontSize: '12px',
         color: CSS.textDim,

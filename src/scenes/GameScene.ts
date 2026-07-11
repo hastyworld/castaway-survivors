@@ -31,6 +31,7 @@ import Fx from '../systems/Fx';
 import { Sfx } from '../systems/Sfx';
 import { getRun, WEAPONS, PASSIVES, ENEMIES } from '../content';
 import { addGold, markRunCleared } from '../save';
+import { charBonuses } from '../characters';
 
 type State = 'playing' | 'over';
 
@@ -159,7 +160,7 @@ export default class GameScene extends Phaser.Scene {
 
     // 시스템
     this.weaponSystem = new WeaponSystem(this);
-    this.weaponSystem.addOrLevel('coconut'); // 시작 무기
+    this.weaponSystem.addOrLevel(charBonuses().startWeapon); // 캐릭터별 시작 무기
     this.waves = new WaveManager(this, this.island);
     this.hud = new Hud(this);
     this.levelUp = new LevelUp(this);

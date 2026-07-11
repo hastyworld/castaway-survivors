@@ -3,8 +3,8 @@
 // 이동만 조작, 공격은 무기 시스템(자동)이 담당.
 // ============================================================
 import Phaser from 'phaser';
-import { COLORS } from '../config';
 import { permBonuses } from '../save';
+import { charBonuses, heroTexture } from '../characters';
 
 export default class Player extends Phaser.Physics.Arcade.Image {
   // 판 시작 시점의 스탯 (영구 성장 반영)
@@ -22,7 +22,7 @@ export default class Player extends Phaser.Physics.Arcade.Image {
   invulnUntil = 0; // 피격 무적 종료 시각(ms)
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene, x, y, 'player');
+    super(scene, x, y, heroTexture()); // 선택 캐릭터 + 진화 단계의 외형
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
@@ -32,13 +32,16 @@ export default class Player extends Phaser.Physics.Arcade.Image {
     body.setCircle(24, 8, 8);
     body.setCollideWorldBounds(true);
 
-    // 영구 성장(②) 반영
+    // 영구 성장(②) + 캐릭터 정체성(성향/진화) 반영
     const b = permBonuses();
-    this.maxHp += b.maxHp;
+    const c = charBonuses();
+    this.maxHp = Math.round((this.maxHp + b.maxHp) * c.hpMult);
     this.hp = this.maxHp;
-    this.powerMult *= b.powerMult;
-    this.speedMult *= b.speedMult;
-    this.pickupRadius += b.pickup;
+    this.powerMult *= b.powerMult * c.powerMult;
+    this.speedMult *= b.speedMult * c.speedMult;
+    this.hasteMult *= c.hasteMult;
+    this.pickupRadius += b.pickup + c.pickupBonus;
+    this.regenPerSec += c.regen;
   }
 
   get speed(): number {

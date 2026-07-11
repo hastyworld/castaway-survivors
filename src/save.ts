@@ -4,6 +4,7 @@
 // 기획안 5번: 성장은 3겹으로 분리. 여기 저장되는 건 ②(영구)와 ③(탈것).
 // ============================================================
 import { VEHICLE_CHAIN, ISLAND_COUNT, RUNS_PER_ISLAND } from './content';
+import type { CharId } from './config';
 
 // 다음 섬을 열려면 현재 섬에서 이만큼 판을 깨야 함
 const UNLOCK_THRESHOLD = 8;
@@ -28,10 +29,18 @@ export const PERM_UPGRADES: PermUpgrade[] = [
   { id: 'magnet', name: '보물 감각', desc: '기본 획득범위 +20', maxLevel: 6, costBase: 25 },
 ];
 
+// 캐릭터별 저장 상태 (해금 여부 + 영구 진화 단계)
+export interface CharSave {
+  unlocked: boolean;
+  stage: number; // 0..MAX_STAGE (characters.ts)
+}
+
 export interface SaveData {
   gold: number;
   runsCleared: Record<number, number>; // 섬index → 클리어한 판 수 (0..RUNS_PER_ISLAND)
   perm: Record<PermId, number>; // 영구 특성 레벨
+  selectedChar: CharId; // 현재 선택한 캐릭터
+  chars: Partial<Record<CharId, CharSave>>; // 캐릭터 해금/진화 상태
 }
 
 function fresh(): SaveData {
@@ -39,6 +48,8 @@ function fresh(): SaveData {
     gold: 0,
     runsCleared: {},
     perm: { maxhp: 0, power: 0, speed: 0, magnet: 0 },
+    selectedChar: 'castaway',
+    chars: { castaway: { unlocked: true, stage: 0 } },
   };
 }
 
@@ -55,6 +66,9 @@ export function load(): SaveData {
         ...parsed,
         perm: { ...fresh().perm, ...(parsed.perm ?? {}) },
         runsCleared: parsed.runsCleared ?? {},
+        // 구버전 세이브 호환: 캐릭터 정보 없으면 기본값 채움
+        selectedChar: parsed.selectedChar ?? 'castaway',
+        chars: { ...fresh().chars, ...(parsed.chars ?? {}) },
       };
       return cache;
     }

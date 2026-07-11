@@ -76,41 +76,136 @@ export function generateArt(scene: Phaser.Scene): void {
   g.fillCircle(32, 32, 30);
   tex('joyThumb');
 
-  // ---------- 주인공: 밀짚모자 표류 생존자 ----------
-  // 그림자
-  g.fillStyle(0x000000, 0.15);
-  g.fillEllipse(32, 56, 34, 10);
-  // 몸통(파란 셔츠)
-  g.fillStyle(0x6fb7e0, 1);
-  g.fillRoundedRect(20, 38, 24, 20, 9);
-  g.fillStyle(0x8fd3ff, 1);
-  g.fillRoundedRect(22, 40, 20, 12, 7);
-  // 팔
-  g.fillStyle(SKIN, 1);
-  g.fillCircle(19, 46, 4.5);
-  g.fillCircle(45, 46, 4.5);
-  // 머리
-  g.fillStyle(SKIN, 1);
-  g.fillCircle(32, 30, 12);
-  g.fillStyle(SKIN_D, 1);
-  g.fillEllipse(32, 40, 16, 6); // 턱 그늘
-  g.fillStyle(SKIN, 1);
-  g.fillCircle(32, 29, 11.5);
-  // 눈 + 볼
-  eyes(g, 32, 5, 30, 3, 1.6);
-  g.fillStyle(0xffb0a0, 0.5);
-  g.fillCircle(25, 34, 2.5);
-  g.fillCircle(39, 34, 2.5);
-  // 밀짚모자
-  g.fillStyle(STRAW_D, 1);
-  g.fillEllipse(32, 20, 42, 12); // 챙
-  g.fillStyle(STRAW, 1);
-  g.fillEllipse(32, 19, 40, 9);
-  g.fillStyle(STRAW_D, 1);
-  g.fillTriangle(20, 19, 44, 19, 32, 5); // 고깔
-  g.fillStyle(STRAW, 1);
-  g.fillTriangle(22, 18, 42, 18, 32, 7);
-  tex('player');
+  // ---------- 주인공들: 캐릭터 4종 × 진화 3단계 ----------
+  // characters.ts 의 hero_<id>_<stage> 키와 1:1 대응.
+  type HatKind = 'straw' | 'headband' | 'bandana' | 'hood';
+  interface HeroOpts {
+    shirt: number;
+    shirtLight: number;
+    hat: HatKind;
+    hatC: number;
+    hatD: number;
+    eyepatch?: boolean;
+    stage: number; // 0..2 — 1: 금장식, 2: 왕관 + 황금 오라
+  }
+  const hero = (key: string, o: HeroOpts) => {
+    // 진화 2단계: 황금 오라 (몸 뒤 은은한 빛)
+    if (o.stage >= 2) {
+      g.fillStyle(0xffd45e, 0.1);
+      g.fillCircle(32, 34, 29);
+      g.fillStyle(0xffd45e, 0.14);
+      g.fillCircle(32, 34, 24);
+    }
+    // 그림자
+    g.fillStyle(0x000000, 0.15);
+    g.fillEllipse(32, 56, 34, 10);
+    // 몸통
+    g.fillStyle(o.shirt, 1);
+    g.fillRoundedRect(20, 38, 24, 20, 9);
+    g.fillStyle(o.shirtLight, 1);
+    g.fillRoundedRect(22, 40, 20, 12, 7);
+    // 진화 1단계+: 가슴의 금 브로치
+    if (o.stage >= 1) {
+      g.fillStyle(0xffd45e, 1);
+      g.fillCircle(32, 46, 3);
+      g.fillStyle(0xfff2c0, 1);
+      g.fillCircle(31, 45, 1.2);
+    }
+    // 팔
+    g.fillStyle(SKIN, 1);
+    g.fillCircle(19, 46, 4.5);
+    g.fillCircle(45, 46, 4.5);
+    // 머리
+    g.fillStyle(SKIN, 1);
+    g.fillCircle(32, 30, 12);
+    g.fillStyle(SKIN_D, 1);
+    g.fillEllipse(32, 40, 16, 6); // 턱 그늘
+    g.fillStyle(SKIN, 1);
+    g.fillCircle(32, 29, 11.5);
+    // 눈 + 볼
+    eyes(g, 32, 5, 30, 3, 1.6);
+    g.fillStyle(0xffb0a0, 0.5);
+    g.fillCircle(25, 34, 2.5);
+    g.fillCircle(39, 34, 2.5);
+    // 안대 (해적)
+    if (o.eyepatch) {
+      g.fillStyle(DARK, 1);
+      g.fillCircle(37, 30, 4.5);
+      g.lineStyle(2, DARK, 1);
+      g.lineBetween(26, 25, 42, 27);
+    }
+    // 모자
+    switch (o.hat) {
+      case 'straw': // 밀짚모자 (챙 + 고깔)
+        g.fillStyle(o.hatD, 1);
+        g.fillEllipse(32, 20, 42, 12);
+        g.fillStyle(o.hatC, 1);
+        g.fillEllipse(32, 19, 40, 9);
+        g.fillStyle(o.hatD, 1);
+        g.fillTriangle(20, 19, 44, 19, 32, 5);
+        g.fillStyle(o.hatC, 1);
+        g.fillTriangle(22, 18, 42, 18, 32, 7);
+        if (o.stage >= 1) {
+          g.fillStyle(0xffd45e, 1); // 금 리본
+          g.fillRect(23, 16, 18, 3);
+        }
+        break;
+      case 'headband': // 이마 머리띠 (어부)
+        g.fillStyle(o.hatD, 1);
+        g.fillEllipse(32, 22, 25, 12); // 머리카락 느낌 윗부분
+        g.fillStyle(o.hatC, 1);
+        g.fillRect(21, 22, 22, 5); // 띠
+        g.fillStyle(o.hatD, 1);
+        g.fillTriangle(43, 23, 51, 20, 48, 27); // 묶은 매듭 자락
+        if (o.stage >= 1) {
+          g.fillStyle(0xffd45e, 1);
+          g.fillRect(21, 23, 22, 1.6);
+        }
+        break;
+      case 'bandana': // 두건 (해적)
+        g.fillStyle(o.hatC, 1);
+        g.fillEllipse(32, 22, 27, 17);
+        g.fillRect(19, 22, 27, 4);
+        g.fillStyle(o.hatD, 1);
+        g.fillTriangle(45, 24, 55, 22, 51, 31); // 매듭 자락
+        g.fillStyle(WHITE, 0.55); // 물방울 무늬
+        g.fillCircle(26, 18, 1.8);
+        g.fillCircle(34, 15, 1.8);
+        g.fillCircle(40, 19, 1.8);
+        if (o.stage >= 1) {
+          g.fillStyle(0xffd45e, 1);
+          g.fillRect(19, 24, 27, 2);
+        }
+        break;
+      case 'hood': // 후드 (주술사)
+        g.fillStyle(o.hatD, 1);
+        g.fillEllipse(32, 21, 30, 20);
+        g.fillRect(17, 21, 30, 7);
+        g.fillStyle(o.hatC, 1);
+        g.fillEllipse(32, 19, 24, 13);
+        g.fillStyle(o.hatD, 1);
+        g.fillTriangle(32, 4, 27, 14, 37, 14); // 뾰족한 후드 끝
+        if (o.stage >= 1) {
+          g.fillStyle(0xffd45e, 1); // 이마의 금 문양
+          g.fillCircle(32, 24, 2.2);
+        }
+        break;
+    }
+    // 진화 2단계: 작은 금관
+    if (o.stage >= 2) crown(g, 32, 12, 18);
+    tex(key);
+  };
+
+  const heroDefs: { id: string; o: Omit<HeroOpts, 'stage'> }[] = [
+    { id: 'castaway', o: { shirt: 0x6fb7e0, shirtLight: 0x8fd3ff, hat: 'straw', hatC: STRAW, hatD: STRAW_D } },
+    { id: 'fisher', o: { shirt: 0x3aa88f, shirtLight: 0x5cc9ad, hat: 'headband', hatC: 0x4a86c8, hatD: 0x2e567e } },
+    { id: 'pirate', o: { shirt: 0xa8433a, shirtLight: 0xc95c4e, hat: 'bandana', hatC: 0x73364a, hatD: 0x4a2231, eyepatch: true } },
+    { id: 'shaman', o: { shirt: 0x7a5aa8, shirtLight: 0x9678c8, hat: 'hood', hatC: 0x9678c8, hatD: 0x5a3f80 } },
+  ];
+  for (const h of heroDefs) for (let st = 0; st <= 2; st++) hero(`hero_${h.id}_${st}`, { ...h.o, stage: st });
+
+  // 구버전 호환: 'player' = 기본 표류자 모습
+  hero('player', { ...heroDefs[0].o, stage: 0 });
 
   // ---------- 적: 모기떼 (작고 빠른 벌레) ----------
   g.fillStyle(WHITE, 0.45);
