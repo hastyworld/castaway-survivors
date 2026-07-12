@@ -4,8 +4,9 @@
 // ============================================================
 import Phaser from 'phaser';
 import { CSS, FONT, GAME_WIDTH, GAME_HEIGHT, COLORS } from '../config';
-import { drawGradient } from '../ui/Background';
+import { drawMenuBg } from '../ui/Background';
 import { makeButton } from '../ui/Button';
+import { drawPanel } from '../ui/Panel';
 import { ISLAND_THEMES, RUNS_PER_ISLAND } from '../content';
 import { currentVehicle, isIslandUnlocked, isRunUnlocked } from '../save';
 
@@ -27,19 +28,24 @@ export default class ResultScene extends Phaser.Scene {
 
   create(data: ResultData): void {
     const win = data.victory;
-    drawGradient(this, win ? COLORS.ocean : COLORS.oceanDark, win ? COLORS.sandDark : COLORS.pirate);
+    drawMenuBg(this, win ? COLORS.ocean : COLORS.oceanDark, win ? 0x6a4a52 : 0x3a2b4d, win ? COLORS.accent : COLORS.accent2);
     this.cameras.main.fadeIn(400, 0, 0, 0);
 
+    // 결과 엠블럼 (승/패)
+    const emY = 138;
+    this.add.image(GAME_WIDTH / 2, emY, 'glow').setTint(win ? COLORS.accent : COLORS.danger).setAlpha(0.35).setDisplaySize(300, 300).setBlendMode(Phaser.BlendModes.ADD);
+    this.add.text(GAME_WIDTH / 2, emY - 8, win ? '🏆' : '💀', { fontFamily: FONT, fontSize: '58px' }).setOrigin(0.5);
+
     this.add
-      .text(GAME_WIDTH / 2, 140, win ? '판 클리어!' : '조난...', { fontFamily: FONT, fontSize: '44px', color: win ? CSS.accent : CSS.danger, fontStyle: 'bold' })
-      .setOrigin(0.5);
+      .text(GAME_WIDTH / 2, emY + 68, win ? '판 클리어!' : '조난...', { fontFamily: FONT, fontSize: '42px', color: win ? CSS.accent : CSS.danger, fontStyle: 'bold' })
+      .setOrigin(0.5).setShadow(0, 3, '#00000088', 6);
     this.add
-      .text(GAME_WIDTH / 2, 190, win ? `${data.runName} 돌파!` : `${data.runName}에서 쓰러졌다`, { fontFamily: FONT, fontSize: '16px', color: CSS.textDim })
+      .text(GAME_WIDTH / 2, emY + 108, win ? `${data.runName} 돌파!` : `${data.runName}에서 쓰러졌다`, { fontFamily: FONT, fontSize: '15px', color: CSS.textDim })
       .setOrigin(0.5);
 
     if (win) {
       const veh = this.add
-        .text(GAME_WIDTH / 2, 258, `🚢 현재 탈것: ${currentVehicle()}`, { fontFamily: FONT, fontSize: '17px', color: CSS.green, fontStyle: 'bold' })
+        .text(GAME_WIDTH / 2, emY + 138, `🚢 현재 탈것: ${currentVehicle()}`, { fontFamily: FONT, fontSize: '16px', color: CSS.green, fontStyle: 'bold' })
         .setOrigin(0.5)
         .setScale(0.6)
         .setAlpha(0);
@@ -47,17 +53,24 @@ export default class ResultScene extends Phaser.Scene {
     }
 
     // 통계 패널
-    const panel = this.add.rectangle(GAME_WIDTH / 2, 420, GAME_WIDTH - 80, 190, COLORS.panel, 0.9).setStrokeStyle(2, COLORS.panelBorder);
-    const rows: [string, string][] = [
-      ['처치한 적', `${data.kills}`],
-      ['도달 레벨', `Lv.${data.level}`],
-      ['생존 시간', this.fmtTime(data.timeMs)],
-      ['획득 골드', `◈${data.goldEarned}`],
+    const panelY = 448;
+    const panelW = GAME_WIDTH - 72;
+    drawPanel(this, GAME_WIDTH / 2, panelY, panelW, 194, { radius: 22 });
+    const rows: [string, string, string][] = [
+      ['⚔️', '처치한 적', `${data.kills}`],
+      ['⭐', '도달 레벨', `Lv.${data.level}`],
+      ['⏱️', '생존 시간', this.fmtTime(data.timeMs)],
+      ['◈', '획득 골드', `${data.goldEarned}`],
     ];
     rows.forEach((r, i) => {
-      const y = panel.y - 70 + i * 42;
-      this.add.text(panel.x - panel.width / 2 + 24, y, r[0], { fontFamily: FONT, fontSize: '16px', color: CSS.textDim }).setOrigin(0, 0.5);
-      this.add.text(panel.x + panel.width / 2 - 24, y, r[1], { fontFamily: FONT, fontSize: '18px', color: CSS.text, fontStyle: 'bold' }).setOrigin(1, 0.5);
+      const y = panelY - 72 + i * 46;
+      this.add.text(GAME_WIDTH / 2 - panelW / 2 + 24, y, `${r[0]}  ${r[1]}`, { fontFamily: FONT, fontSize: '16px', color: CSS.textDim }).setOrigin(0, 0.5);
+      this.add.text(GAME_WIDTH / 2 + panelW / 2 - 24, y, r[2], { fontFamily: FONT, fontSize: '19px', color: i === 3 ? CSS.accent : CSS.text, fontStyle: 'bold' }).setOrigin(1, 0.5);
+      if (i < 3) {
+        const g = this.add.graphics();
+        g.lineStyle(1, COLORS.panelBorder, 0.35);
+        g.lineBetween(GAME_WIDTH / 2 - panelW / 2 + 20, y + 23, GAME_WIDTH / 2 + panelW / 2 - 20, y + 23);
+      }
     });
 
     // 진행 버튼

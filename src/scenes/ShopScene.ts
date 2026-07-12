@@ -1,12 +1,14 @@
 // ============================================================
 // ShopScene.ts — 상점 (판 밖 영구 성장 ②, 골드로 구매)
-// 기획안 5번: 유저가 체감하는 "점점 강해진다"의 핵심 축.
 // ============================================================
 import Phaser from 'phaser';
 import { CSS, FONT, GAME_WIDTH, GAME_HEIGHT, COLORS } from '../config';
-import { drawGradient } from '../ui/Background';
+import { drawMenuBg } from '../ui/Background';
 import { makeButton } from '../ui/Button';
+import { drawPanel, goldChip } from '../ui/Panel';
 import { load, save, PERM_UPGRADES, permCost, resetSave } from '../save';
+
+const ICONS: Record<string, string> = { maxhp: '❤️', power: '💪', speed: '🌀', magnet: '🧲' };
 
 export default class ShopScene extends Phaser.Scene {
   constructor() {
@@ -14,87 +16,69 @@ export default class ShopScene extends Phaser.Scene {
   }
 
   create(): void {
-    drawGradient(this, COLORS.panel, COLORS.oceanDark);
+    drawMenuBg(this, COLORS.oceanDark, 0x2a3f52, COLORS.accent);
     const data = load();
 
-    this.add
-      .text(GAME_WIDTH / 2, 56, '상점', { fontFamily: FONT, fontSize: '34px', color: CSS.text, fontStyle: 'bold' })
-      .setOrigin(0.5);
-    this.add
-      .text(GAME_WIDTH / 2, 94, `보유 골드  ◈${data.gold}`, { fontFamily: FONT, fontSize: '18px', color: CSS.accent })
-      .setOrigin(0.5);
+    this.add.text(GAME_WIDTH / 2, 52, '상점', { fontFamily: FONT, fontSize: '32px', color: CSS.text, fontStyle: 'bold' }).setOrigin(0.5).setShadow(0, 3, '#00000077', 6);
+    this.add.text(GAME_WIDTH / 2, 82, '영구 성장 · 모든 판에 적용', { fontFamily: FONT, fontSize: '13px', color: CSS.textDim }).setOrigin(0.5);
+    goldChip(this, GAME_WIDTH / 2, 112, data.gold);
 
-    const startY = 150;
-    const rowH = 110;
+    const startY = 156;
+    const rowH = 104;
 
     PERM_UPGRADES.forEach((u, i) => {
-      const y = startY + i * rowH;
+      const cy = startY + i * rowH + (rowH - 12) / 2;
       const lvl = data.perm[u.id];
       const maxed = lvl >= u.maxLevel;
       const cost = permCost(u, lvl);
       const affordable = !maxed && data.gold >= cost;
+      const pw = GAME_WIDTH - 36;
 
-      const panel = this.add
-        .rectangle(GAME_WIDTH / 2, y + rowH / 2 - 8, GAME_WIDTH - 40, rowH - 16, COLORS.panel, 0.9)
-        .setStrokeStyle(2, COLORS.panelBorder);
+      drawPanel(this, GAME_WIDTH / 2, cy, pw, rowH - 14, { radius: 18 });
+      const left = GAME_WIDTH / 2 - pw / 2;
 
-      this.add
-        .text(panel.x - panel.width / 2 + 16, y + 8, u.name, {
-          fontFamily: FONT,
-          fontSize: '19px',
-          color: CSS.text,
-          fontStyle: 'bold',
-        })
-        .setOrigin(0, 0);
-      this.add
-        .text(panel.x - panel.width / 2 + 16, y + 36, u.desc, { fontFamily: FONT, fontSize: '14px', color: CSS.textDim })
-        .setOrigin(0, 0);
+      // 아이콘 배지
+      const ig = this.add.graphics();
+      ig.fillStyle(COLORS.oceanDark, 0.9);
+      ig.fillCircle(left + 40, cy, 26);
+      ig.lineStyle(2, maxed ? COLORS.accent : COLORS.panelBorder, 0.9);
+      ig.strokeCircle(left + 40, cy, 26);
+      this.add.text(left + 40, cy, ICONS[u.id] ?? '◆', { fontFamily: FONT, fontSize: '24px' }).setOrigin(0.5);
 
-      // 레벨 표시 (칸)
+      this.add.text(left + 78, cy - 22, u.name, { fontFamily: FONT, fontSize: '19px', color: CSS.text, fontStyle: 'bold' }).setOrigin(0, 0.5);
+      this.add.text(left + 78, cy, u.desc, { fontFamily: FONT, fontSize: '13px', color: CSS.textDim }).setOrigin(0, 0.5);
+
+      // 레벨 진행 점
       const dots = Array.from({ length: u.maxLevel }, (_, k) => (k < lvl ? '●' : '○')).join(' ');
-      this.add
-        .text(panel.x - panel.width / 2 + 16, y + 62, dots, { fontFamily: FONT, fontSize: '13px', color: CSS.accent })
-        .setOrigin(0, 0);
+      this.add.text(left + 78, cy + 22, dots, { fontFamily: FONT, fontSize: '13px', color: maxed ? CSS.accent : CSS.textDim }).setOrigin(0, 0.5);
 
       // 구매 버튼
       const label = maxed ? 'MAX' : `◈${cost}`;
       makeButton(
         this,
-        panel.x + panel.width / 2 - 62,
-        y + rowH / 2 - 8,
+        GAME_WIDTH / 2 + pw / 2 - 56,
+        cy,
         label,
         () => {
           const d = load();
           const curLvl = d.perm[u.id];
-          const c = permCost(u, curLvl);
-          if (curLvl < u.maxLevel && d.gold >= c) {
-            d.gold -= c;
+          const cc = permCost(u, curLvl);
+          if (curLvl < u.maxLevel && d.gold >= cc) {
+            d.gold -= cc;
             d.perm[u.id] = curLvl + 1;
             save(d);
             this.scene.restart();
           }
         },
-        { width: 96, height: 46, fontSize: 17, disabled: maxed || !affordable }
+        { width: 92, height: 48, fontSize: 16, disabled: maxed || !affordable }
       );
     });
 
-    makeButton(this, GAME_WIDTH / 2 - 90, GAME_HEIGHT - 54, '← 타이틀', () => this.scene.start('Title'), {
-      width: 150,
-      height: 50,
-      fill: COLORS.panelBorder,
-      textColor: '#ffffff',
-      fontSize: 17,
+    makeButton(this, GAME_WIDTH / 2 - 92, GAME_HEIGHT - 46, '← 타이틀', () => this.scene.start('Title'), {
+      width: 156, height: 50, fill: COLORS.panelBorder, textColor: '#ffffff', fontSize: 16,
     });
-    makeButton(
-      this,
-      GAME_WIDTH / 2 + 90,
-      GAME_HEIGHT - 54,
-      '기록 초기화',
-      () => {
-        resetSave();
-        this.scene.restart();
-      },
-      { width: 150, height: 50, fill: COLORS.danger, textColor: '#ffffff', fontSize: 15 }
-    );
+    makeButton(this, GAME_WIDTH / 2 + 92, GAME_HEIGHT - 46, '기록 초기화', () => { resetSave(); this.scene.restart(); }, {
+      width: 156, height: 50, fill: COLORS.danger, textColor: '#ffffff', fontSize: 15,
+    });
   }
 }

@@ -1,10 +1,11 @@
 // ============================================================
-// TitleScene.ts — 타이틀 화면
+// TitleScene.ts — 타이틀 화면 ("석양의 무인도" 룩)
 // ============================================================
 import Phaser from 'phaser';
 import { CSS, FONT, GAME_WIDTH, GAME_HEIGHT, COLORS } from '../config';
-import { drawGradient } from '../ui/Background';
+import { drawMenuBg } from '../ui/Background';
 import { makeButton } from '../ui/Button';
+import { goldChip } from '../ui/Panel';
 import { load, currentVehicle } from '../save';
 import { heroTexture, selectedCharId, getChar, charStage } from '../characters';
 import { Sfx } from '../systems/Sfx';
@@ -15,85 +16,78 @@ export default class TitleScene extends Phaser.Scene {
   }
 
   create(): void {
-    drawGradient(this, COLORS.ocean, COLORS.sandDark);
+    drawMenuBg(this, COLORS.oceanDark, 0x6a4a52, COLORS.accent2);
+    const save = load();
 
-    // 떠다니는 뗏목 느낌의 장식 원
-    for (let i = 0; i < 6; i++) {
-      const c = this.add.circle(
-        Phaser.Math.Between(30, GAME_WIDTH - 30),
-        Phaser.Math.Between(GAME_HEIGHT - 260, GAME_HEIGHT - 40),
-        Phaser.Math.Between(6, 16),
-        0xffffff,
-        0.08
-      );
-      this.tweens.add({ targets: c, y: c.y - 20, duration: Phaser.Math.Between(2000, 4000), yoyo: true, repeat: -1 });
-    }
-
-    this.add
-      .text(GAME_WIDTH / 2, 210, '표류 서바이버', { fontFamily: FONT, fontSize: '46px', color: CSS.text, fontStyle: 'bold' })
+    // ---- 타이틀 로고 ----
+    const title = this.add
+      .text(GAME_WIDTH / 2, 168, '표류 서바이버', { fontFamily: FONT, fontSize: '50px', color: CSS.text, fontStyle: 'bold' })
       .setOrigin(0.5)
-      .setShadow(0, 4, '#00000066', 6);
+      .setShadow(0, 5, '#00000088', 10);
+    // 골드 밑줄 강조
+    this.add.rectangle(GAME_WIDTH / 2, 202, 150, 4, COLORS.accent).setOrigin(0.5).setAlpha(0.9);
     this.add
-      .text(GAME_WIDTH / 2, 258, 'Castaway Survivors', { fontFamily: FONT, fontSize: '18px', color: CSS.accent })
-      .setOrigin(0.5);
+      .text(GAME_WIDTH / 2, 226, 'CASTAWAY  SURVIVORS', { fontFamily: FONT, fontSize: '15px', color: CSS.accent, fontStyle: 'bold' })
+      .setOrigin(0.5)
+      .setLetterSpacing?.(4);
     this.add
-      .text(GAME_WIDTH / 2, 300, '무인도에서 살아남아 탈출하라', { fontFamily: FONT, fontSize: '15px', color: CSS.textDim })
+      .text(GAME_WIDTH / 2, 256, '무인도에서 살아남아 탈출하라', { fontFamily: FONT, fontSize: '14px', color: CSS.textDim })
       .setOrigin(0.5);
+    this.tweens.add({ targets: title, y: 164, duration: 2200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
-    // 주인공 미리보기 — 선택한 캐릭터의 진화 외형 + 현재 칭호
-    const hero = this.add.image(GAME_WIDTH / 2, 396, heroTexture()).setDisplaySize(84, 84);
-    this.tweens.add({ targets: hero, y: 380, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    // ---- 주인공 스탠드 ----
+    const px = GAME_WIDTH / 2;
+    const py = 388;
+    // 발판 그림자 + 광채
+    this.add.image(px, py + 44, 'glow').setTint(COLORS.accent).setAlpha(0.3).setDisplaySize(180, 90).setBlendMode(Phaser.BlendModes.ADD);
+    this.add.ellipse(px, py + 44, 120, 26, 0x000000, 0.25);
+    const hero = this.add.image(px, py, heroTexture()).setDisplaySize(96, 96);
+    this.tweens.add({ targets: hero, y: py - 12, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     const cid = selectedCharId();
     this.add
-      .text(GAME_WIDTH / 2, 448, getChar(cid).stages[charStage(cid)].name, { fontFamily: FONT, fontSize: '15px', color: CSS.accent, fontStyle: 'bold' })
+      .text(px, py + 74, getChar(cid).stages[charStage(cid)].name, { fontFamily: FONT, fontSize: '16px', color: CSS.accent, fontStyle: 'bold' })
       .setOrigin(0.5);
 
-    makeButton(this, GAME_WIDTH / 2, 540, '여정 시작', () => this.scene.start('Map'), { width: 260, height: 62, fontSize: 22 });
-    makeButton(this, GAME_WIDTH / 2, 614, '캐릭터 (선택·진화)', () => this.scene.start('Chars'), {
-      width: 260,
-      height: 54,
-      fill: COLORS.panelBorder,
-      textColor: '#ffffff',
-      fontSize: 18,
+    // ---- 메인 버튼 ----
+    makeButton(this, px, 552, '여정 시작', () => this.scene.start('Map'), { width: 268, height: 66, fontSize: 24 });
+    makeButton(this, px - 68, 636, '캐릭터', () => this.scene.start('Chars'), {
+      width: 128, height: 54, fill: COLORS.panelBorder, textColor: '#ffffff', fontSize: 17,
     });
-    makeButton(this, GAME_WIDTH / 2, 682, '상점 (영구 성장)', () => this.scene.start('Shop'), {
-      width: 260,
-      height: 54,
-      fill: COLORS.panelBorder,
-      textColor: '#ffffff',
-      fontSize: 18,
+    makeButton(this, px + 68, 636, '상점', () => this.scene.start('Shop'), {
+      width: 128, height: 54, fill: COLORS.panelBorder, textColor: '#ffffff', fontSize: 17,
     });
 
-    const save = load();
-    this.add
-      .text(GAME_WIDTH / 2, 752, `보유 골드  ◈${save.gold}    ·    현재 탈것: ${currentVehicle()}`, {
-        fontFamily: FONT,
-        fontSize: '15px',
-        color: CSS.accent,
-      })
-      .setOrigin(0.5);
+    // ---- 하단 정보 ----
+    goldChip(this, px - 66, 714, save.gold);
+    this.add.text(px + 66, 714, `🚢 ${currentVehicle()}`, { fontFamily: FONT, fontSize: '15px', color: CSS.textDim }).setOrigin(0.5, 0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 30, 'v1.0 · 이동만 조작, 공격은 자동 · 화면을 누르면 소리 켜짐', {
-        fontFamily: FONT,
-        fontSize: '12px',
-        color: CSS.textDim,
+      .text(GAME_WIDTH / 2, GAME_HEIGHT - 26, 'v1.1 · 이동만 조작, 공격은 자동 · 화면을 누르면 소리 켜짐', {
+        fontFamily: FONT, fontSize: '12px', color: CSS.textDim,
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setAlpha(0.7);
 
-    // 음소거 토글 (우상단)
+    // ---- 음소거 토글 (우상단) ----
+    this.makeMuteToggle();
+  }
+
+  private makeMuteToggle(): void {
+    const x = GAME_WIDTH - 34;
+    const y = 34;
+    const g = this.add.graphics();
+    g.fillStyle(0x0e2333, 0.85);
+    g.fillCircle(0, 0, 20);
+    g.lineStyle(1.5, COLORS.panelBorder, 0.7);
+    g.strokeCircle(0, 0, 20);
+    g.setPosition(x, y);
     const mi = this.add
-      .text(GAME_WIDTH - 24, 28, Sfx.muted ? '♪ 꺼짐' : '♪ 켜짐', {
-        fontFamily: FONT,
-        fontSize: '14px',
-        color: Sfx.muted ? '#6f8496' : CSS.accent,
-        fontStyle: 'bold',
-      })
-      .setOrigin(1, 0.5)
-      .setInteractive({ useHandCursor: true });
-    mi.on('pointerup', () => {
+      .text(x, y - 1, Sfx.muted ? '🔇' : '🔊', { fontFamily: FONT, fontSize: '18px' })
+      .setOrigin(0.5);
+    const zone = this.add.zone(x, y, 44, 44).setInteractive({ useHandCursor: true });
+    zone.on('pointerup', () => {
       const m = Sfx.toggleMute();
-      mi.setText(m ? '♪ 꺼짐' : '♪ 켜짐').setColor(m ? '#6f8496' : CSS.accent);
+      mi.setText(m ? '🔇' : '🔊');
     });
   }
 }

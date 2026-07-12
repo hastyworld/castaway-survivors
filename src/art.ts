@@ -47,6 +47,32 @@ export function generateArt(scene: Phaser.Scene): void {
     g.clear();
   };
 
+  // ---------- UI 공용: 부드러운 광채(radial) — 캔버스로 매끈하게 ----------
+  // 노을빛/버튼 글로우/픽업 광채 등에 tint 해서 사용.
+  const radial = (key: string, size: number, stops: [number, string][]) => {
+    if (scene.textures.exists(key)) return;
+    const c = scene.textures.createCanvas(key, size, size);
+    if (!c) return;
+    const ctx = c.getContext();
+    const grd = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    for (const [at, col] of stops) grd.addColorStop(at, col);
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, size, size);
+    c.refresh();
+  };
+  // 흰 광채(가장자리 투명) — tint로 색 입힘
+  radial('glow', 256, [
+    [0, 'rgba(255,255,255,1)'],
+    [0.5, 'rgba(255,255,255,0.5)'],
+    [1, 'rgba(255,255,255,0)'],
+  ]);
+  // 화면 비네팅(중앙 투명 → 가장자리 어둠). 메뉴 배경에 덮어 깊이감.
+  radial('vignette', 320, [
+    [0, 'rgba(4,13,22,0)'],
+    [0.62, 'rgba(4,13,22,0)'],
+    [1, 'rgba(4,13,22,0.55)'],
+  ]);
+
   // ---------- 기본 도형 (오라/링/파티클/조이스틱) ----------
   g.fillStyle(WHITE, 1);
   g.fillCircle(32, 32, 32);

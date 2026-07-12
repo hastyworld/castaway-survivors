@@ -17,12 +17,12 @@ export const BOTTOM_MARGIN = 150;
 export const WORLD_W = 2000;
 export const WORLD_H = 2000;
 
-// 색상 팔레트 (무인도/바다 톤). 하드코딩 대신 여기서 가져다 씁니다.
+// 색상 팔레트 (무인도/바다 톤 — "석양의 무인도" 디자인 시스템). 하드코딩 대신 여기서.
 export const COLORS = {
-  ocean: 0x0d3b5c, // 깊은 바다
-  oceanDark: 0x071a2b,
-  sand: 0xf4d9a0, // 모래
-  sandDark: 0xe0b877,
+  ocean: 0x14435f, // 깊은 바다(트와일라잇 틸)
+  oceanDark: 0x081a2b,
+  sand: 0xf7dca4, // 모래
+  sandDark: 0xe6b878,
   jungle: 0x1f5e3a, // 정글
   pirate: 0x3a2b4d, // 해적 바다(보라빛)
 
@@ -61,20 +61,27 @@ export const COLORS = {
   xpBar: 0x64c8ff,
 
   text: 0xffffff,
-  textDim: 0xbfd4e0,
-  panel: 0x0f2a3f,
-  panelBorder: 0x2b5e82,
-  accent: 0xffd45e, // 포인트색(골드)
-  danger: 0xff5a5a,
+  textDim: 0xa6c0d6,
+  panel: 0x143247, // 서피스(딥 틸)
+  panelBorder: 0x336a8f,
+  panelHi: 0x5290b5, // 패널 상단 림 하이라이트
+  shadow: 0x040d16, // 공용 그림자
+  ink: 0x0b2032, // 밝은 면(골드 버튼) 위 진한 글씨
+  accent: 0xffc24b, // 포인트색(허니 골드)
+  accentDark: 0xd99320, // 골드 버튼 아랫면(입체 립)
+  accent2: 0xff8a6b, // 서브 포인트(석양 코랄)
+  danger: 0xff6b6b,
 } as const;
 
 // 공용 문자열 색상(텍스트/스타일용)
 export const CSS = {
   text: '#ffffff',
-  textDim: '#bfd4e0',
-  accent: '#ffd45e',
-  danger: '#ff5a5a',
-  green: '#4de07a',
+  textDim: '#a6c0d6',
+  accent: '#ffc24b',
+  accent2: '#ff8a6b',
+  ink: '#0b2032',
+  danger: '#ff6b6b',
+  green: '#57e08a',
 };
 
 export const FONT = 'Arial, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
